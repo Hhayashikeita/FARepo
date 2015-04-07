@@ -13,6 +13,10 @@ namespace FuckingAwesomeRiven
 
         public static double GetComboDmg(bool useR, Obj_AI_Hero target)
         {
+            if (MenuHandler.Config.Item("urfMode").GetValue<bool>())
+            {
+                return 1000;
+            }
             if (!target.IsValidTarget())
             {
                 return 0;

@@ -54,10 +54,7 @@ namespace FuckingAwesomeLeeSinReborn
             insec.AddItem(new MenuItem("clickInsec", "Click Insec").SetValue(true));
             insec.AddItem(new MenuItem("sdgdsgsg", "Click Enemy then click ally"));
             insec.AddItem(new MenuItem("ddfhdhdg", "Tower/Minion/Champion"));
-            insec.AddItem(new MenuItem("mouseInsec", "Insec to mouse pos").SetValue(false));
             insec.AddItem(new MenuItem("easyInsec", "Easy Insec").SetValue(true));
-            insec.AddItem(new MenuItem("sdgdsgsdfdssg", "Click Enemy then move mouse"));
-            insec.AddItem(new MenuItem("ddfhdffdsdfdhdg", "(it will walk to insec target)"));
             insec.AddItem(new MenuItem("q2InsecRange", "Use Q2 if buffed unit in range (all)").SetValue(true));
             insec.AddItem(new MenuItem("q1InsecRange", "Use Q1 on units in insec range").SetValue(false));
             insec.AddItem(new MenuItem("flashInsec", "Flash if ward down").SetValue(false));

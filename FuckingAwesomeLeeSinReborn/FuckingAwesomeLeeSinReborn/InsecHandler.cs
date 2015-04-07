@@ -60,20 +60,17 @@ namespace FuckingAwesomeLeeSinReborn
             {
                 return _selectedUnit.Position.Extend(_selectedEnemy.Position, _selectedUnit.Distance(_selectedEnemy) + 250);
             }
-            if (_selectedEnemy.IsValidTarget() && Program.Config.Item("easyInsec").GetValue<bool>())
+            if (!_selectedEnemy.IsValidTarget() || !Program.Config.Item("easyInsec").GetValue<bool>())
             {
-                foreach (var tower in ObjectManager.Get<Obj_AI_Turret>().Where(tower => tower.IsAlly && tower.Health > 0 && tower.Distance(_selectedEnemy) < 2000))
-                {
-                    return tower.Position.Extend(_selectedEnemy.Position, tower.Distance(_selectedEnemy) + 250);
-                }
-                foreach (var ally in ObjectManager.Get<Obj_AI_Hero>().Where(ally => ally.IsAlly && !ally.IsMe && ally.HealthPercent > 10 && ally.Distance(_selectedEnemy) < 2000))
-                {
-                    return ally.Position.Extend(_selectedEnemy.Position, ally.Distance(_selectedEnemy) + 250);
-                }
+                return new Vector3();
             }
-            if (_selectedUnit == null && _selectedEnemy.IsValidTarget() && Program.Config.Item("mouseInsec").GetValue<bool>())
+            foreach (var tower in ObjectManager.Get<Obj_AI_Turret>().Where(tower => tower.IsAlly && tower.Health > 0 && tower.Distance(_selectedEnemy) < 2000))
             {
-                return Game.CursorPos.Extend(_selectedEnemy.Position, Game.CursorPos.Distance(_selectedEnemy.Position) + 250);
+                return tower.Position.Extend(_selectedEnemy.Position, tower.Distance(_selectedEnemy) + 250);
+            }
+            foreach (var ally in ObjectManager.Get<Obj_AI_Hero>().Where(ally => ally.IsAlly && !ally.IsMe && ally.HealthPercent > 10 && ally.Distance(_selectedEnemy) < 2000))
+            {
+                return ally.Position.Extend(_selectedEnemy.Position, ally.Distance(_selectedEnemy) + 250);
             }
             return new Vector3();
         }
@@ -87,9 +84,7 @@ namespace FuckingAwesomeLeeSinReborn
             }
             if (_selectedEnemy != null)
             {
-                Orbwalking.Orbwalk(
-                    Orbwalking.InAutoAttackRange(_selectedEnemy) ? _selectedEnemy : null,
-                    _selectedUnit == null ? _selectedEnemy.Position : Game.CursorPos);
+                Orbwalking.Orbwalk(Orbwalking.InAutoAttackRange(_selectedEnemy) ? _selectedEnemy : null, Game.CursorPos);
             }
             if (!InsecPos().IsValid() || !_selectedEnemy.IsValidTarget() || !CheckHandler.spells[SpellSlot.R].IsReady())
                     return;
