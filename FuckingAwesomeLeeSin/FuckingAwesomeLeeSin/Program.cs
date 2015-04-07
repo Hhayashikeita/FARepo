@@ -9,7 +9,7 @@ ___________             __   .__                    _____                       
 using System.Collections.Generic;
 using System.Drawing;
 using System.Runtime.CompilerServices;
-using System.Runtime.Remoting.Messaging;
+using System.Runtime.Remoting.Messaging;o
 using System.Security.AccessControl;
 using LeagueSharp;
 using LeagueSharp.Common;
@@ -267,7 +267,7 @@ namespace FuckingAwesomeLeeSin
             Menu.AddToMainMenu();
 
             Drawing.OnDraw += Drawing_OnDraw; // Add onDraw
-            Game.OnGameUpdate += Game_OnGameUpdate; // adds OnGameUpdate (Same as onTick in bol)
+            Game.OnUpdate += Game_OnGameUpdate; // adds OnGameUpdate (Same as onTick in bol)
             Obj_AI_Base.OnProcessSpellCast += Obj_AI_Base_OnProcessSpellCast;
             GameObject.OnCreate += GameObject_OnCreate;
             Orbwalking.AfterAttack += Orbwalking_AfterAttack;

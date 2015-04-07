@@ -66,6 +66,9 @@ namespace iFuckingAwesomeGraves
                 case Orbwalking.OrbwalkingMode.Combo:
                     DoCombo();
                     break;
+                case Orbwalking.OrbwalkingMode.Mixed:
+                    DoHarass();
+                    break;
             }
         }
 
@@ -87,6 +90,12 @@ namespace iFuckingAwesomeGraves
             CollateralDamageKs();
         }
 
+        private static void DoHarass()
+        {
+            CastBuckshot();
+            CastSmokeScreen();
+        }
+
         #endregion
 
         #region spell casting
@@ -94,38 +103,39 @@ namespace iFuckingAwesomeGraves
         private static void CastBuckshot()
         {
             var qTarget = TargetSelector.GetTarget(_spells[SpellSlot.Q].Range, TargetSelector.DamageType.Physical);
-            if (_menu.Item("useQC").GetValue<bool>() && qTarget.IsValidTarget(_spells[SpellSlot.Q].Range))
+            if (_menu.Item("useQC").GetValue<bool>() ||
+                _menu.Item("useQH").GetValue<bool>() && qTarget.IsValidTarget(_spells[SpellSlot.Q].Range))
             {
                 if (_spells[SpellSlot.Q].IsReady() && _spells[SpellSlot.Q].IsInRange(qTarget))
                 {
-                    _spells[SpellSlot.Q].CastIfHitchanceEquals(qTarget, GetCustomHitChance()); // TODO custom hitchance.
+                    _spells[SpellSlot.Q].CastIfHitchanceEquals(qTarget, GetCustomHitChance());
                 }
+            }
+
+            if (_menu.Item("com.ifag.combo.buckshot.qImmobile").GetValue<bool>() && _spells[SpellSlot.Q].IsReady() &&
+                _spells[SpellSlot.Q].IsInRange(qTarget) && qTarget.IsValidTarget(_spells[SpellSlot.Q].Range))
+            {
+                _spells[SpellSlot.Q].CastIfHitchanceEquals(qTarget, HitChance.Immobile);
             }
         }
 
         private static void CastSmokeScreen()
         {
             var wTarget = TargetSelector.GetTarget(_spells[SpellSlot.W].Range, TargetSelector.DamageType.Physical);
-            if (_menu.Item("useWC").GetValue<bool>() && wTarget.IsValidTarget(_spells[SpellSlot.W].Range))
+            if (_menu.Item("useWC").GetValue<bool>() ||
+                _menu.Item("useWH").GetValue<bool>() && wTarget.IsValidTarget(_spells[SpellSlot.W].Range))
             {
                 if (_spells[SpellSlot.W].IsReady() && _spells[SpellSlot.W].IsInRange(wTarget))
                 {
-                    _spells[SpellSlot.W].CastIfHitchanceEquals(wTarget, GetCustomHitChance()); // TODO custom hitchance
+                    _spells[SpellSlot.W].CastIfHitchanceEquals(wTarget, GetCustomHitChance());
                 }
             }
+            //TODO finish
         }
 
         private static void CastQuickdraw()
         {
-            var positionAfterE = _player.Position.Extend(Game.CursorPos, _spells[SpellSlot.E].Range);
-            if (_menu.Item("useEC").GetValue<bool>() && _spells[SpellSlot.E].IsReady())
-            {
-                if (_menu.Item("eCheck").GetValue<bool>() && positionAfterE.UnderTurret(true))
-                {
-                    return;
-                }
-                _spells[SpellSlot.E].Cast(positionAfterE);
-            }
+            //who needs to use E anyway :S
         }
 
         /// <summary>
@@ -139,9 +149,13 @@ namespace iFuckingAwesomeGraves
             {
                 if (_spells[SpellSlot.R].IsReady() && _spells[SpellSlot.R].IsInRange(rTarget))
                 {
+                    if (_menu.Item("overkillCheck").GetValue<bool>())
+                    {
+                        //TODO check for overkill and return if is overkill kappa...
+                    }
                     if (_spells[SpellSlot.R].GetDamage(rTarget) > rTarget.Health + 10)
                     {
-                        _spells[SpellSlot.R].CastIfHitchanceEquals(rTarget, GetCustomHitChance()); // TODO custom hitchance
+                        _spells[SpellSlot.R].CastIfHitchanceEquals(rTarget, GetCustomHitChance());
                     }
                     else
                     {
@@ -151,7 +165,7 @@ namespace iFuckingAwesomeGraves
                             let prediction = _spells[SpellSlot.R].GetPrediction(source, true)
                             where
                                 _player.Distance(source) <= _spells[SpellSlot.R].Range &&
-                                prediction.AoeTargetsHitCount >= 3
+                                prediction.AoeTargetsHitCount >= _menu.Item("rCount").GetValue<Slider>().Value
                             select source)
                         {
                             _spells[SpellSlot.R].CastIfHitchanceEquals(source, GetCustomHitChance());
@@ -165,23 +179,35 @@ namespace iFuckingAwesomeGraves
         {
             foreach (var target in _player.Position.GetEnemiesInRange(1900).Where(e => e.IsValidTarget()))
             {
-                if (target.Distance(_player) < _spells[SpellSlot.R].Range && _spells[SpellSlot.R].GetDamage(target) > target.Health)
+                if (target.Distance(_player) < _spells[SpellSlot.R].Range &&
+                    _spells[SpellSlot.R].GetDamage(target) > target.Health)
                 {
                     _spells[SpellSlot.R].Cast(target);
                     return;
                 }
                 if (R2Damage(target) < target.Health)
+                {
                     return;
+                }
                 var pred = _r2.GetPrediction(target);
-                if (pred.CollisionObjects.Count(
+                if (
+                    pred.CollisionObjects.Count(
                         a => a.IsEnemy && a.IsValid<Obj_AI_Hero>() && _player.Distance(a) < 1100) > 0)
+                {
                     _r2.Cast(pred.CastPosition);
+                }
                 else
                 {
                     foreach (var target2 in _player.Position.GetEnemiesInRange(1100).Where(e => e.IsValidTarget()))
                     {
-                        var sector = new Geometry.Sector(
-                        _spells[SpellSlot.R].GetPrediction(target2).UnitPosition.To2D(), _player.Position.To2D().Extend(_spells[SpellSlot.R].GetPrediction(target2).UnitPosition.To2D(), _player.Distance(_spells[SpellSlot.R].GetPrediction(target2).UnitPosition) + 100), 60 * (float)Math.PI / 180, 800).ToPolygon();
+                        var sector =
+                            new Geometry.Sector(
+                                _spells[SpellSlot.R].GetPrediction(target2).UnitPosition.To2D(),
+                                _player.Position.To2D()
+                                    .Extend(
+                                        _spells[SpellSlot.R].GetPrediction(target2).UnitPosition.To2D(),
+                                        _player.Distance(_spells[SpellSlot.R].GetPrediction(target2).UnitPosition) + 100),
+                                60 * (float) Math.PI / 180, 800).ToPolygon();
                         if (!sector.IsOutside(target2.Position.To2D()))
                         {
                             _r2.Cast(_r2.GetPrediction(target2).CastPosition);
@@ -208,7 +234,6 @@ namespace iFuckingAwesomeGraves
         private static void CreateMenu()
         {
             _menu = new Menu("iFuckingAwesomeGraves", "ifag", true);
-            //LOL iJabba = iFag = iFuckingAwesomeGraves, your a CUNT L0L
 
             TargetSelector.AddToMenu(_menu.AddSubMenu(new Menu("Target Selector", "Target Selector")));
 
@@ -216,10 +241,29 @@ namespace iFuckingAwesomeGraves
 
             var comboMenu = new Menu("Graves - Combo", "com.ifag.combo");
             {
-                comboMenu.AddItem(new MenuItem("useQC", "Use Q Combo").SetValue(true));
-                comboMenu.AddItem(new MenuItem("useWC", "Use W Combo").SetValue(true));
-                comboMenu.AddItem(new MenuItem("useEC", "Use E Combo").SetValue(true));
-                comboMenu.AddItem(new MenuItem("useRC", "Use R Combo").SetValue(true));
+                var buckshotMenu = new Menu("Buckshot (Q)", "com.ifag.combo.buckshot");
+                {
+                    buckshotMenu.AddItem(new MenuItem("useQC", "Use Q Combo").SetValue(true));
+                    buckshotMenu.AddItem(new MenuItem("qImmobile", "Auto Q Immobile").SetValue(true));
+                    // TODO: make it workerino
+                    //TODO auto Q if x enemies will be hit
+                    comboMenu.AddSubMenu(buckshotMenu);
+                }
+                //
+                var smokescreenMenu = new Menu("Smokescreen (W)", "com.ifag.combo.smokescreen");
+                {
+                    smokescreenMenu.AddItem(new MenuItem("useWC", "Use W Combo").SetValue(true));
+                    //TODO min enemies to cast smokescreen
+                    //cast on immobilel aswell.
+                    comboMenu.AddSubMenu(smokescreenMenu);
+                }
+                var collateralMenu = new Menu("Collateral Damage (R)", "com.ifag.combo.collateral");
+                {
+                    collateralMenu.AddItem(new MenuItem("useRC", "Use R Combo").SetValue(true));
+                    collateralMenu.AddItem(new MenuItem("rCount", "Min Enemies for R").SetValue(new Slider(3, 0, 5)));
+                    //TODO more options for R?
+                    comboMenu.AddSubMenu(collateralMenu);
+                }
                 _menu.AddSubMenu(comboMenu);
             }
 
@@ -236,10 +280,12 @@ namespace iFuckingAwesomeGraves
                 var laneclearMenu = new Menu("Laneclear", "com.ifag.farm.lc");
                 {
                     laneclearMenu.AddItem(new MenuItem("useQLC", "Use Q Laneclear").SetValue(false));
+                    laneclearMenu.AddItem(new MenuItem("qlcCount", "Min minions for Q").SetValue(new Slider(3, 0, 10)));
                 }
                 var lasthitMenu = new Menu("Lasthit", "com.ifag.farm.lh");
                 {
                     lasthitMenu.AddItem(new MenuItem("useQLH", "Use Q Last hit").SetValue(false));
+                    lasthitMenu.AddItem(new MenuItem("qlhCount", "Min Minions for Q").SetValue(new Slider(3, 0, 10)));
                 }
                 farmMenu.AddSubMenu(laneclearMenu);
                 farmMenu.AddSubMenu(lasthitMenu);
@@ -248,10 +294,11 @@ namespace iFuckingAwesomeGraves
 
             var miscMenu = new Menu("Graves - Misc", "com.ifag.misc");
             {
-                miscMenu.AddItem(new MenuItem("eCheck", "Turret Safety for E"));
+                miscMenu.AddItem(new MenuItem("eCheck", "Turret Safety for E").SetValue(true));
                 miscMenu.AddItem(
                     new MenuItem("hitchance", "Hitchance").SetValue(
                         new StringList(new[] { "Low", "Medium", "High", "Very High" }, 2)));
+                miscMenu.AddItem(new MenuItem("overkillCheck", "Check Overkill").SetValue(true));
                 _menu.AddSubMenu(miscMenu);
             }
 
@@ -262,8 +309,12 @@ namespace iFuckingAwesomeGraves
         private static double R2Damage(Obj_AI_Hero target)
         {
             if (_spells[SpellSlot.R].Level == 0)
+            {
                 return 0;
-            return _player.CalcDamage(target, Damage.DamageType.Physical, new double[] { 200, 320, 440 }[_spells[SpellSlot.R].Level - 1] + 1.2 * _player.FlatPhysicalDamageMod);
+            }
+            return _player.CalcDamage(
+                target, Damage.DamageType.Physical,
+                new double[] { 200, 320, 440 }[_spells[SpellSlot.R].Level - 1] + 1.2 * _player.FlatPhysicalDamageMod);
         }
 
         private static HitChance GetCustomHitChance()

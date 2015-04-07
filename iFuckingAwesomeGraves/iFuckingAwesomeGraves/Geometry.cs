@@ -1,18 +1,17 @@
-﻿// Copyright 2014 - 2014 Esk0r
-// Geometry.cs is part of Evade.
+﻿// This file is part of LeagueSharp.Common.
 // 
-// Evade is free software: you can redistribute it and/or modify
+// LeagueSharp.Common is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
-// Evade is distributed in the hope that it will be useful,
+// LeagueSharp.Common is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with Evade. If not, see <http://www.gnu.org/licenses/>.
+// along with LeagueSharp.Common.  If not, see <http://www.gnu.org/licenses/>.
 
 #region
 
@@ -32,7 +31,7 @@ using GamePath = System.Collections.Generic.List<SharpDX.Vector2>;
 namespace iFuckingAwesomeGraves
 {
     /// <summary>
-    /// Class that contains the geometry related methods.
+    ///     Class that contains the geometry related methods.
     /// </summary>
     public static class Geometry
     {
@@ -57,7 +56,7 @@ namespace iFuckingAwesomeGraves
         }
 
         /// <summary>
-        /// Returns the position on the path after t milliseconds at speed speed.
+        ///     Returns the position on the path after t milliseconds at speed speed.
         /// </summary>
         public static Vector2 PositionAfter(this GamePath self, int t, int speed, int delay = 0)
         {
@@ -66,7 +65,7 @@ namespace iFuckingAwesomeGraves
             {
                 var from = self[i];
                 var to = self[i + 1];
-                var d = (int)to.Distance(from);
+                var d = (int) to.Distance(from);
                 if (d > distance)
                 {
                     return from + distance * (to - from).Normalized();
@@ -85,7 +84,6 @@ namespace iFuckingAwesomeGraves
             }
             return polygon;
         }
-
 
         public static Paths ClipPolygons(List<Polygon> polygons)
         {
@@ -107,6 +105,13 @@ namespace iFuckingAwesomeGraves
             return solution;
         }
 
+        public static void DrawLineInWorld(Vector3 start, Vector3 end, int width, Color color)
+        {
+            var from = Drawing.WorldToScreen(start);
+            var to = Drawing.WorldToScreen(end);
+            Drawing.DrawLine(from[0], from[1], to[0], to[1], width, color);
+            //Drawing.DrawLine(from.X, from.Y, to.X, to.Y, width, color);
+        }
 
         public class Circle
         {
@@ -124,13 +129,13 @@ namespace iFuckingAwesomeGraves
                 var result = new Polygon();
                 var outRadius = (overrideWidth > 0
                     ? overrideWidth
-                    : (offset + Radius) / (float)Math.Cos(2 * Math.PI / CircleLineSegmentN));
+                    : (offset + Radius) / (float) Math.Cos(2 * Math.PI / CircleLineSegmentN));
 
                 for (var i = 1; i <= CircleLineSegmentN; i++)
                 {
                     var angle = i * 2 * Math.PI / CircleLineSegmentN;
                     var point = new Vector2(
-                        Center.X + outRadius * (float)Math.Cos(angle), Center.Y + outRadius * (float)Math.Sin(angle));
+                        Center.X + outRadius * (float) Math.Cos(angle), Center.Y + outRadius * (float) Math.Sin(angle));
                     result.Add(point);
                 }
 
@@ -209,7 +214,6 @@ namespace iFuckingAwesomeGraves
             }
         }
 
-
         public class Ring
         {
             public Vector2 Center;
@@ -227,14 +231,14 @@ namespace iFuckingAwesomeGraves
             {
                 var result = new Polygon();
 
-                var outRadius = (offset + Radius + RingRadius) / (float)Math.Cos(2 * Math.PI / CircleLineSegmentN);
+                var outRadius = (offset + Radius + RingRadius) / (float) Math.Cos(2 * Math.PI / CircleLineSegmentN);
                 var innerRadius = Radius - RingRadius - offset;
 
                 for (var i = 0; i <= CircleLineSegmentN; i++)
                 {
                     var angle = i * 2 * Math.PI / CircleLineSegmentN;
                     var point = new Vector2(
-                        Center.X - outRadius * (float)Math.Cos(angle), Center.Y - outRadius * (float)Math.Sin(angle));
+                        Center.X - outRadius * (float) Math.Cos(angle), Center.Y - outRadius * (float) Math.Sin(angle));
                     result.Add(point);
                 }
 
@@ -242,8 +246,8 @@ namespace iFuckingAwesomeGraves
                 {
                     var angle = i * 2 * Math.PI / CircleLineSegmentN;
                     var point = new Vector2(
-                        Center.X + innerRadius * (float)Math.Cos(angle),
-                        Center.Y - innerRadius * (float)Math.Sin(angle));
+                        Center.X + innerRadius * (float) Math.Cos(angle),
+                        Center.Y - innerRadius * (float) Math.Sin(angle));
                     result.Add(point);
                 }
 
@@ -270,28 +274,19 @@ namespace iFuckingAwesomeGraves
             public Polygon ToPolygon(int offset = 0)
             {
                 var result = new Polygon();
-                var outRadius = (Radius + offset) / (float)Math.Cos(2 * Math.PI / CircleLineSegmentN);
+                var outRadius = (Radius + offset) / (float) Math.Cos(2 * Math.PI / CircleLineSegmentN);
 
                 result.Add(Center);
-                var Side1 = Direction.Rotated(-Angle * 0.5f);
+                var side1 = Direction.Rotated(-Angle * 0.5f);
 
                 for (var i = 0; i <= CircleLineSegmentN; i++)
                 {
-                    var cDirection = Side1.Rotated(i * Angle / CircleLineSegmentN).Normalized();
+                    var cDirection = side1.Rotated(i * Angle / CircleLineSegmentN).Normalized();
                     result.Add(new Vector2(Center.X + outRadius * cDirection.X, Center.Y + outRadius * cDirection.Y));
                 }
 
                 return result;
             }
         }
-
-        public static void DrawLineInWorld(Vector3 start, Vector3 end, int width, Color color)
-        {
-            var from = Drawing.WorldToScreen(start);
-            var to = Drawing.WorldToScreen(end);
-            Drawing.DrawLine(from[0], from[1], to[0], to[1], width, color);
-            //Drawing.DrawLine(from.X, from.Y, to.X, to.Y, width, color);
-        }
     }
-
 }
