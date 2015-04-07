@@ -9,7 +9,7 @@ ___________             __   .__                    _____                       
 using System.Collections.Generic;
 using System.Drawing;
 using System.Runtime.CompilerServices;
-using System.Runtime.Remoting.Messaging;o
+using System.Runtime.Remoting.Messaging;
 using System.Security.AccessControl;
 using LeagueSharp;
 using LeagueSharp.Common;
