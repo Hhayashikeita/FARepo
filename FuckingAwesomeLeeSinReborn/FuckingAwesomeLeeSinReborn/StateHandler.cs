@@ -14,9 +14,12 @@
 // along with LeagueSharp.Common.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using LeagueSharp;
 using LeagueSharp.Common;
+using SharpDX;
+using Collision = LeagueSharp.Common.Collision;
 
 namespace FuckingAwesomeLeeSinReborn
 {
@@ -95,7 +98,7 @@ namespace FuckingAwesomeLeeSinReborn
 
             if (CheckHandler._spells[SpellSlot.E].IsReady() && useE)
             {
-                if (CheckHandler.EState && target.Distance(Player) < CheckHandler._spells[SpellSlot.E].Range)
+                if (CheckHandler.EState && target.Distance(Player) < CheckHandler._spells[SpellSlot.E].Range - 50)
                 {
                     CheckHandler._spells[SpellSlot.E].Cast();
                     return;
@@ -329,20 +332,62 @@ namespace FuckingAwesomeLeeSinReborn
         {
             var qData = CheckHandler._spells[SpellSlot.Q].GetPrediction(target);
             if (CheckHandler._spells[SpellSlot.Q].IsReady() &&
-                target.IsValidTarget(CheckHandler._spells[SpellSlot.Q].Range) && qData.Hitchance != HitChance.Collision)
+                target.IsValidTarget(CheckHandler._spells[SpellSlot.Q].Range))
             {
-                CheckHandler._spells[SpellSlot.Q].CastIfHitchanceEquals(target, GetHitChance());
+                if (qData.Hitchance >= GetHitChance())
+                {
+                    CheckHandler._spells[SpellSlot.Q].Cast(qData.CastPosition);
+                }
             }
-            else if (smiteQ && CheckHandler._spells[SpellSlot.Q].IsReady() &&
+
+            if (smiteQ && CheckHandler._spells[SpellSlot.Q].IsReady() &&
+                target.IsValidTarget(CheckHandler._spells[SpellSlot.Q].Range) && qData.Hitchance == HitChance.Collision && Player.Distance(target) > Orbwalking.GetRealAutoAttackRange(target))
+            {
+                Obj_AI_Base firstMinion = GetFirstCollisionMinion(Player, target);
+                if (firstMinion.Distance(Player) <= 600 && firstMinion != null &&
+                    Player.GetSummonerSpellDamage(firstMinion, Damage.SummonerSpell.Smite) >= firstMinion.Health)
+                {
+                    Player.Spellbook.CastSpell(Player.GetSpellSlot(CheckHandler.SmiteSpellName()), firstMinion);
+                    CheckHandler._spells[SpellSlot.Q].Cast(qData.CastPosition);
+                }
+
+            }
+
+            /*else if (smiteQ && CheckHandler._spells[SpellSlot.Q].IsReady() &&
                      target.IsValidTarget(CheckHandler._spells[SpellSlot.Q].Range) &&
                      qData.CollisionObjects.Count(a => a.NetworkId != target.NetworkId && a.IsMinion) == 1 &&
                      Player.GetSpellSlot(CheckHandler.SmiteSpellName()).IsReady())
             {
+                Obj_AI_Base minionSmite =
+                    qData.CollisionObjects.Where(a => a.NetworkId != target.NetworkId && a.IsMinion).ToList()[0];
                 Player.Spellbook.CastSpell(
-                    Player.GetSpellSlot(CheckHandler.SmiteSpellName()),
-                    qData.CollisionObjects.Where(a => a.NetworkId != target.NetworkId && a.IsMinion).ToList()[0]);
+                    Player.GetSpellSlot(CheckHandler.SmiteSpellName()), minionSmite);
                 CheckHandler._spells[SpellSlot.Q].Cast(qData.CastPosition);
-            }
+            }*/
+        }
+
+        /// <summary>
+        ///     Gets the minions in the Collision path from the source target to the given Position then creates a new prediction
+        ///     input based on those details and compiles to list. thanks bye
+        /// </summary>
+        /// <param name="source"> the source mate </param>
+        /// <param name="target"> the target mate </param>
+        /// <returns> A Nice List of minions currently blocking your Q HIT M8 </returns>
+        public static Obj_AI_Base GetFirstCollisionMinion(Obj_AI_Hero source, Obj_AI_Base target)
+        {
+            // ReSharper disable once UseObjectOrCollectionInitializer
+            PredictionInput input = new PredictionInput
+            {
+                Unit = source,
+                Radius = CheckHandler._spells[SpellSlot.Q].Width,
+                Delay = CheckHandler._spells[SpellSlot.Q].Delay,
+                Speed = CheckHandler._spells[SpellSlot.Q].Speed
+            };
+
+            input.CollisionObjects[0] = CollisionableObjects.Minions;
+
+            return
+                Collision.GetCollision(new List<Vector3> { target.Position }, input).FirstOrDefault();
         }
 
         private static HitChance GetHitChance()

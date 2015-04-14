@@ -14,6 +14,7 @@
 // along with LeagueSharp.Common.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
+using System.Linq;
 using LeagueSharp;
 using LeagueSharp.Common;
 using SharpDX;
@@ -163,6 +164,7 @@ namespace FuckingAwesomeLeeSinReborn
                     ObjectManager.Player.Position, CheckHandler._spells[SpellSlot.R].Range,
                     Config.Item("DR").GetValue<Circle>().Color, lowFps ? lowFpsMode : 5);
             }
+            Render.Circle.DrawCircle(StateHandler.GetFirstCollisionMinion(ObjectManager.Player, TargetSelector.GetTarget(1200f, TargetSelector.DamageType.Physical)).Position, 100f, Color.OrangeRed);
             WardjumpHandler.Draw();
             InsecHandler.Draw();
         }

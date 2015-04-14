@@ -111,13 +111,13 @@ namespace FuckingAwesomeLeeSinReborn
             }
             if (!_selectedEnemy.IsValidTarget() || !Program.Config.Item("easyInsec").GetValue<bool>())
             {
-                foreach (var tower in
+                foreach (Obj_AI_Turret tower in
                     ObjectManager.Get<Obj_AI_Turret>()
                         .Where(tower => tower.IsAlly && tower.Health > 0 && tower.Distance(_selectedEnemy) < 2000))
                 {
                     return tower.Position.Extend(_selectedEnemy.Position, tower.Distance(_selectedEnemy) + 250);
                 }
-                foreach (var ally in
+                foreach (Obj_AI_Hero ally in
                     ObjectManager.Get<Obj_AI_Hero>()
                         .Where(
                             ally =>
@@ -132,7 +132,6 @@ namespace FuckingAwesomeLeeSinReborn
             {
                 return Game.CursorPos.Extend(
                     _selectedEnemy.Position, Game.CursorPos.Distance(_selectedEnemy.Position) + 250);
-                //return new Vector3();
             }
             foreach (Obj_AI_Turret tower in ObjectManager.Get<Obj_AI_Turret>().Where(tower => tower.IsAlly && tower.Health > 0 && tower.Distance(_selectedEnemy) < 2000))
             {
@@ -220,7 +219,6 @@ namespace FuckingAwesomeLeeSinReborn
                 return;
             }
             foreach (Obj_AI_Base unit in
-
                 ObjectManager.Get<Obj_AI_Base>()
                     .Where(
                         a =>
