@@ -37,7 +37,32 @@
   <ItemGroup>
     <Reference Include="Accessibility" />
     <Reference Include="BehaviorSharp">
+<<<<<<< HEAD
       <HintPath>C:\Users\CoreyJames\Desktop\LeagueSharp\System\BehaviorSharp.dll</HintPath>
+=======
+<<<<<<< HEAD
+      <HintPath>C:\LeagueSharp\System\BehaviorSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="clipper_library">
+      <HintPath>C:\LeagueSharp\System\clipper_library.dll</HintPath>
+    </Reference>
+    <Reference Include="LeagueSharp">
+      <HintPath>C:\LeagueSharp\System\LeagueSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="LeagueSharp.Common">
+      <HintPath>C:\LeagueSharp\System\LeagueSharp.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX">
+      <HintPath>C:\LeagueSharp\System\SharpDX.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX.Direct3D9">
+      <HintPath>C:\LeagueSharp\System\SharpDX.Direct3D9.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX.XInput">
+      <HintPath>C:\LeagueSharp\System\SharpDX.XInput.dll</HintPath>
+=======
+      <HintPath>C:\Users\CoreyJames\Desktop\LeagueSharp\\System\BehaviorSharp.dll</HintPath>
+>>>>>>> origin/master
     </Reference>
     <Reference Include="clipper_library">
       <HintPath>C:\Users\CoreyJames\Desktop\LeagueSharp\System\clipper_library.dll</HintPath>
@@ -56,7 +81,12 @@
       <HintPath>C:\Users\CoreyJames\Desktop\LeagueSharp\System\SharpDX.Direct3D9.dll</HintPath>
     </Reference>
     <Reference Include="SharpDX.XInput">
+<<<<<<< HEAD
       <HintPath>C:\Users\CoreyJames\Desktop\LeagueSharp\System\SharpDX.XInput.dll</HintPath>
+=======
+      <HintPath>C:\Users\CoreyJames\Desktop\LeagueSharp\\System\SharpDX.XInput.dll</HintPath>
+>>>>>>> origin/master
+>>>>>>> origin/master
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

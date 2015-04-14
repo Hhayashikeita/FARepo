@@ -34,7 +34,7 @@ namespace FuckingAwesomeThresh
             {
                 var ally =
                     ObjectManager.Get<Obj_AI_Hero>()
-                        .FirstOrDefault(ally2 => ally2.IsAlly && ally2.Distance(Player) < 2000);
+                        .FirstOrDefault(ally2 => ally2.IsAlly && !ally2.IsMe && ally2.Distance(Player) < 2000);
                 if (ally == null)
                 {
                     Pull(target);
@@ -42,10 +42,10 @@ namespace FuckingAwesomeThresh
                 }
                 if (ally.Distance(Player) < ally.Distance(target))
                 {
-                    Push(target);
+                    Pull(target);
                     return;
                 }
-                    Pull(target);
+                    Push(target);
             }
 
             if (CheckHandler.Spells[SpellSlot.Q].IsReady() &&
@@ -81,18 +81,18 @@ namespace FuckingAwesomeThresh
             {
                 var ally =
                     ObjectManager.Get<Obj_AI_Hero>()
-                        .FirstOrDefault(ally2 => ally2.IsAlly && ally2.Distance(Player) < 1000);
+                        .FirstOrDefault(ally2 => ally2.IsAlly && !ally2.IsMe && ally2.Distance(Player) < 1000);
                 if (ally == null)
-                {
-                    Pull(target);
-                    return;
-                }
-                if (ally.Distance(Player) < ally.Distance(target))
                 {
                     Push(target);
                     return;
                 }
-                Pull(target);
+                if (ally.Distance(Player) < ally.Distance(target))
+                {
+                    Pull(target);
+                    return;
+                }
+                Push(target);
             }
 
             if (CheckHandler.Spells[SpellSlot.Q].IsReady() &&
@@ -148,7 +148,7 @@ namespace FuckingAwesomeThresh
             var distance = 0;
             var priorityNo = 0;
             Obj_AI_Hero selectedAlly = null;
-            foreach (var ally in ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsAlly && hero.Distance(Player) < CheckHandler.Spells[SpellSlot.W].Range))
+            foreach (var ally in ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsAlly && hero.Distance(Player) < CheckHandler.Spells[SpellSlot.W].Range && !hero.IsMe))
             {
                var priority = Program.Config.Item("priority" + ally.ChampionName).GetValue<Slider>().Value;
                 if (priority > priorityNo || priority == priorityNo && distance < Player.Distance(ally))
@@ -164,7 +164,6 @@ namespace FuckingAwesomeThresh
         private static Obj_AI_Hero GetBestAllyForShield()
         {
             return null;
-
         }
     }
 }

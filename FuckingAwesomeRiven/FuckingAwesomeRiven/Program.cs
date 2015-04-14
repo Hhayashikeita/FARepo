@@ -33,8 +33,8 @@ namespace FuckingAwesomeRiven
             MenuHandler.InitMenu();
             CheckHandler.Init();
             Player = ObjectManager.Player;
-            Game.OnGameUpdate += Game_OnGameUpdate;
-            Game.OnGameUpdate += eventArgs => StateHandler.Tick();
+            Game.OnUpdate += Game_OnGameUpdate;
+            Game.OnUpdate += eventArgs => StateHandler.Tick();
             Obj_AI_Base.OnProcessSpellCast += CheckHandler.Obj_AI_Hero_OnProcessSpellCast;
             Obj_AI_Base.OnProcessSpellCast += AutoE.autoE;
             Drawing.OnDraw += DrawHandler.Draw;
