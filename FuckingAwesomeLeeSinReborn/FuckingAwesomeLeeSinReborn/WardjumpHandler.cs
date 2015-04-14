@@ -23,7 +23,7 @@ using Color = System.Drawing.Color;
 
 namespace FuckingAwesomeLeeSinReborn
 {
-    internal class WardjumpHandler
+    internal static class WardjumpHandler
     {
         public static bool DrawEnabled;
         private static Vector3 _drawPos;
@@ -66,7 +66,7 @@ namespace FuckingAwesomeLeeSinReborn
 
             if (minions)
             {
-                var selectedMinion =
+                Obj_AI_Minion selectedMinion =
                     ObjectManager.Get<Obj_AI_Minion>()
                         .Where(
                             minion =>
@@ -82,7 +82,7 @@ namespace FuckingAwesomeLeeSinReborn
             }
             if (champions)
             {
-                var selectedHero =
+                Obj_AI_Hero selectedHero =
                     ObjectManager.Get<Obj_AI_Hero>()
                         .Where(
                             minion =>
@@ -99,7 +99,7 @@ namespace FuckingAwesomeLeeSinReborn
 
             if (wards)
             {
-                var selectedMinion =
+                Obj_AI_Minion selectedMinion =
                     ObjectManager.Get<Obj_AI_Minion>()
                         .Where(
                             minion =>
@@ -108,6 +108,7 @@ namespace FuckingAwesomeLeeSinReborn
                                 !minion.IsMe && (!onlyPos || minion.Distance(pos) < 70))
                         .OrderByDescending(a => Player.Distance(a))
                         .FirstOrDefault();
+                // ReSharper disable once UseNullPropagation
                 if (selectedMinion != null)
                 {
                     return selectedMinion;

@@ -23,7 +23,7 @@ using SharpDX;
 
 namespace FuckingAwesomeLeeSinReborn
 {
-    internal static class CheckHandler
+    public static class CheckHandler
     {
         public static int LastQ, LastQ2, LastW;
         private static int _lastW2;
