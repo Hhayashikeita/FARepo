@@ -381,7 +381,8 @@ namespace FuckingAwesomeLeeSinReborn
                 Unit = source,
                 Radius = CheckHandler._spells[SpellSlot.Q].Width,
                 Delay = CheckHandler._spells[SpellSlot.Q].Delay,
-                Speed = CheckHandler._spells[SpellSlot.Q].Speed
+                Speed = CheckHandler._spells[SpellSlot.Q].Speed,
+                Range = CheckHandler._spells[SpellSlot.Q].Range
             };
 
             input.CollisionObjects[0] = CollisionableObjects.Minions;
