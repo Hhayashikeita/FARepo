@@ -111,7 +111,6 @@ namespace FuckingAwesomeLeeSinReborn
             }
             if (!_selectedEnemy.IsValidTarget() || !Program.Config.Item("easyInsec").GetValue<bool>())
             {
-<<<<<<< HEAD
                 foreach (var tower in
                     ObjectManager.Get<Obj_AI_Turret>()
                         .Where(tower => tower.IsAlly && tower.Health > 0 && tower.Distance(_selectedEnemy) < 2000))
@@ -133,17 +132,15 @@ namespace FuckingAwesomeLeeSinReborn
             {
                 return Game.CursorPos.Extend(
                     _selectedEnemy.Position, Game.CursorPos.Distance(_selectedEnemy.Position) + 250);
-=======
-                return new Vector3();
+                //return new Vector3();
             }
-            foreach (var tower in ObjectManager.Get<Obj_AI_Turret>().Where(tower => tower.IsAlly && tower.Health > 0 && tower.Distance(_selectedEnemy) < 2000))
+            foreach (Obj_AI_Turret tower in ObjectManager.Get<Obj_AI_Turret>().Where(tower => tower.IsAlly && tower.Health > 0 && tower.Distance(_selectedEnemy) < 2000))
             {
                 return tower.Position.Extend(_selectedEnemy.Position, tower.Distance(_selectedEnemy) + 250);
             }
-            foreach (var ally in ObjectManager.Get<Obj_AI_Hero>().Where(ally => ally.IsAlly && !ally.IsMe && ally.HealthPercent > 10 && ally.Distance(_selectedEnemy) < 2000))
+            foreach (Obj_AI_Hero ally in ObjectManager.Get<Obj_AI_Hero>().Where(ally => ally.IsAlly && !ally.IsMe && ally.HealthPercent > 10 && ally.Distance(_selectedEnemy) < 2000))
             {
                 return ally.Position.Extend(_selectedEnemy.Position, ally.Distance(_selectedEnemy) + 250);
->>>>>>> origin/master
             }
             return new Vector3();
         }
