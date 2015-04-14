@@ -52,6 +52,9 @@ namespace FuckingAwesomeLeeSinReborn
             combo.AddItem(new MenuItem("CpassiveCheckCount", "Min Stacks").SetValue(new Slider(1, 1, 2)));
             combo.AddItem(new MenuItem("starCombo", "Star Combo").SetValue(new KeyBind('T', KeyBindType.Press)));
             combo.AddItem(new MenuItem("starsadasCombo", "Q -> Ward -> W -> R -> Q2"));
+            combo.AddItem(
+                new MenuItem("qHitchance", "Q Hitchance").SetValue(
+                    new StringList(new[] { "Low", "Medium", "High", "Very High" }, 2)));
 
             var harass = Config.AddSubMenu(new Menu("Harass", "Harass"));
             harass.AddItem(new MenuItem("HQ", "Use Q").SetValue(true));

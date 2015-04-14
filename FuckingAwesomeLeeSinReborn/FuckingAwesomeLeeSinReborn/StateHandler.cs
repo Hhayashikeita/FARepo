@@ -331,7 +331,7 @@ namespace FuckingAwesomeLeeSinReborn
             if (CheckHandler._spells[SpellSlot.Q].IsReady() &&
                 target.IsValidTarget(CheckHandler._spells[SpellSlot.Q].Range) && qData.Hitchance != HitChance.Collision)
             {
-                CheckHandler._spells[SpellSlot.Q].CastIfHitchanceEquals(target, HitChance.High);
+                CheckHandler._spells[SpellSlot.Q].CastIfHitchanceEquals(target, GetHitChance());
             }
             else if (smiteQ && CheckHandler._spells[SpellSlot.Q].IsReady() &&
                      target.IsValidTarget(CheckHandler._spells[SpellSlot.Q].Range) &&
@@ -342,6 +342,23 @@ namespace FuckingAwesomeLeeSinReborn
                     Player.GetSpellSlot(CheckHandler.SmiteSpellName()),
                     qData.CollisionObjects.Where(a => a.NetworkId != target.NetworkId && a.IsMinion).ToList()[0]);
                 CheckHandler._spells[SpellSlot.Q].Cast(qData.CastPosition);
+            }
+        }
+
+        private static HitChance GetHitChance()
+        {
+            switch (Program.Config.Item("qHitchance").GetValue<StringList>().SelectedIndex)
+            {
+                case 0: // LOW
+                    return HitChance.Low;
+                case 1: // medium
+                    return HitChance.Medium;
+                case 2: // high
+                    return HitChance.High;
+                case 3: // veryhigh
+                    return HitChance.VeryHigh;
+                default:
+                    return HitChance.High;
             }
         }
     }
