@@ -333,7 +333,7 @@ namespace FuckingAwesomeLeeSinReborn
             {
                 CheckHandler._spells[SpellSlot.Q].CastIfHitchanceEquals(target, HitChance.High);
             }
-            else if (CheckHandler._spells[SpellSlot.Q].IsReady() &&
+            else if (smiteQ && CheckHandler._spells[SpellSlot.Q].IsReady() &&
                      target.IsValidTarget(CheckHandler._spells[SpellSlot.Q].Range) &&
                      qData.CollisionObjects.Count(a => a.NetworkId != target.NetworkId && a.IsMinion) == 1 &&
                      Player.GetSpellSlot(CheckHandler.SmiteSpellName()).IsReady())
