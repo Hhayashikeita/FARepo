@@ -1,4 +1,19 @@
-﻿using System;
+﻿// This file is part of LeagueSharp.Common.
+// 
+// LeagueSharp.Common is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// LeagueSharp.Common is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with LeagueSharp.Common.  If not, see <http://www.gnu.org/licenses/>.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using LeagueSharp;
@@ -8,50 +23,98 @@ using Color = System.Drawing.Color;
 
 namespace FuckingAwesomeDraven
 {
-
-    class Axe
+    internal class Axe
     {
+        public GameObject AxeObj;
+        public int EndTick;
+
         public Axe(GameObject obj)
         {
             AxeObj = obj;
             EndTick = Environment.TickCount + 1200;
         }
-
-        public int EndTick;
-        public GameObject AxeObj;
     }
 
-    class AxeCatcher
+    internal class AxeCatcher
     {
         public static List<Axe> AxeSpots = new List<Axe>();
         private static Obj_AI_Minion _prevMinion;
         public static int CurrentAxes;
         public static int LastAa;
         public static int LastQ;
-        public static List<String> AxesList = new List<string>()
+
+        public static List<String> AxesList = new List<string>
         {
-            "Draven_Base_Q_reticle.troy" , "Draven_Skin01_Q_reticle.troy" ,"Draven_Skin03_Q_reticle.troy"
+            "Draven_Base_Q_reticle.troy",
+            "Draven_Skin01_Q_reticle.troy",
+            "Draven_Skin03_Q_reticle.troy"
         };
 
-        public static List<String> QBuffList = new List<string>()
+        public static List<String> QBuffList = new List<string>
         {
-            "Draven_Base_Q_buf.troy", "Draven_Skin01_Q_buf.troy", "Draven_Skin02_Q_buf.troy", "Draven_Skin03_Q_buf.troy"
+            "Draven_Base_Q_buf.troy",
+            "Draven_Skin01_Q_buf.troy",
+            "Draven_Skin02_Q_buf.troy",
+            "Draven_Skin03_Q_buf.troy"
         };
 
-        public static Orbwalking.Orbwalker Orbwalker { get {return Program.Orbwalker; } }
-        public static Obj_AI_Hero Player { get { return ObjectManager.Player; } }
+        public static Orbwalking.Orbwalker Orbwalker
+        {
+            get { return Program.Orbwalker; }
+        }
+
+        public static Obj_AI_Hero Player
+        {
+            get { return ObjectManager.Player; }
+        }
+
         public static int MidAirAxes
         {
             get { return AxeSpots.Count(a => a.AxeObj.IsValid && a.EndTick < Environment.TickCount); }
         }
-        public static float RealAutoAttack(Obj_AI_Base target){
-                return (float) Player.CalcDamage(target, Damage.DamageType.Physical, (ObjectManager.Player.BaseAttackDamage + ObjectManager.Player.FlatPhysicalDamageMod +
-                    (((Program.spells[Spells.Q].Level) > 0 && HasQBuff ? new float[] {45, 55, 65, 75, 85 }[Program.spells[Spells.Q].Level - 1] : 0 ) / 100 * (ObjectManager.Player.BaseAttackDamage + ObjectManager.Player.FlatPhysicalDamageMod))));
+
+        public static bool HasQBuff
+        {
+            get { return Player.Buffs.Any(a => a.DisplayName.ToLower().Contains("spinning")); }
+        }
+
+        public static bool CanAa
+        {
+            get { return Utils.TickCount + Game.Ping / 2 + 25 >= LastAa + Player.AttackDelay * 1000; }
+        }
+
+        public static bool CanMove
+        {
+            get
+            {
+                return Utils.TickCount + Game.Ping / 2 >=
+                       LastAa + Player.AttackCastDelay * 1000 +
+                       Program.Config.Item("ExtraWindup").GetValue<Slider>().Value;
+            }
+        }
+
+        public static bool IsCatching
+        {
+            get { return AxeSpots.Count > 0; }
+        }
+
+        public static float RealAutoAttack(Obj_AI_Base target)
+        {
+            return
+                (float)
+                    Player.CalcDamage(
+                        target, Damage.DamageType.Physical,
+                        (ObjectManager.Player.BaseAttackDamage + ObjectManager.Player.FlatPhysicalDamageMod +
+                         (((Program._spells[Spells.Q].Level) > 0 && HasQBuff
+                             ? new float[] { 45, 55, 65, 75, 85 }[Program._spells[Spells.Q].Level - 1]
+                             : 0) / 100 *
+                          (ObjectManager.Player.BaseAttackDamage + ObjectManager.Player.FlatPhysicalDamageMod))));
         }
 
         public static void GameOnOnWndProc(WndEventArgs args)
         {
-            if (args.Msg != (uint)WindowsMessages.WM_LBUTTONDOWN || !Program.Config.Item("clickRemoveAxes").GetValue<bool>())
+            if (args.Msg != (uint) WindowsMessages.WM_LBUTTONDOWN ||
+                !Program.Config.Item("clickRemoveAxes").GetValue<bool>())
             {
                 return;
             }
@@ -75,48 +138,62 @@ namespace FuckingAwesomeDraven
                 switch (mode)
                 {
                     case 1:
-                        new Geometry.Sector(Player.Position.To2D(), Game.CursorPos.To2D() - Player.Position.To2D() , Program.Config.Item("sectorAngle").GetValue<Slider>().Value * (float) Math.PI / 180, Program.Config.Item("catchRadius").GetValue<Slider>().Value).ToPolygon().Draw(Program.Config.Item("DCR").GetValue<Circle>().Color, 1);
+                        new Geometry.Sector(
+                            Player.Position.To2D(), Game.CursorPos.To2D() - Player.Position.To2D(),
+                            Program.Config.Item("sectorAngle").GetValue<Slider>().Value * (float) Math.PI / 180,
+                            Program.Config.Item("catchRadius").GetValue<Slider>().Value).ToPolygon()
+                            .Draw(Program.Config.Item("DCR").GetValue<Circle>().Color);
                         break;
                     default:
                         Render.Circle.DrawCircle(
-                            Game.CursorPos, Program.Config.Item("catchRadius").GetValue<Slider>().Value, Program.Config.Item("DCR").GetValue<Circle>().Color);
+                            Game.CursorPos, Program.Config.Item("catchRadius").GetValue<Slider>().Value,
+                            Program.Config.Item("DCR").GetValue<Circle>().Color);
                         break;
-
                 }
             }
 
             if (Program.Config.Item("DABR").GetValue<bool>())
+            {
                 return;
+            }
 
             if (Program.Config.Item("DKM").GetValue<Circle>().Active)
             {
                 var a =
                     MinionManager.GetMinions(
                         Player.Position, 800, MinionTypes.All, MinionTeam.NotAlly, MinionOrderTypes.MaxHealth)
-                        .Where(minion => minion.Health <= RealAutoAttack(minion)).ToArray();
+                        .Where(minion => minion.Health <= RealAutoAttack(minion))
+                        .ToArray();
                 for (int i = 0; i < (a.Count() < 10 ? a.Count() : 10); i++)
                 {
-                    Render.Circle.DrawCircle(a[i].Position, a[i].BoundingRadius + 20, Program.Config.Item("DKM").GetValue<Circle>().Color);
+                    Render.Circle.DrawCircle(
+                        a[i].Position, a[i].BoundingRadius + 20, Program.Config.Item("DKM").GetValue<Circle>().Color);
                 }
             }
 
 
             if (Program.Config.Item("DE").GetValue<Circle>().Active)
             {
-                Render.Circle.DrawCircle(Player.Position, Program.spells[Spells.E].Range, Program.Config.Item("DE").GetValue<Circle>().Color);
+                Render.Circle.DrawCircle(
+                    Player.Position, Program._spells[Spells.E].Range, Program.Config.Item("DE").GetValue<Circle>().Color);
             }
 
             if (Program.Config.Item("DR").GetValue<Circle>().Active)
             {
-                Render.Circle.DrawCircle(Player.Position, Program.spells[Spells.R].Range, Program.Config.Item("DR").GetValue<Circle>().Color);
+                Render.Circle.DrawCircle(
+                    Player.Position, Program._spells[Spells.R].Range, Program.Config.Item("DR").GetValue<Circle>().Color);
             }
 
             if (Program.Config.Item("DAR").GetValue<Circle>().Active)
             {
                 foreach (var axe in AxeSpots)
                 {
-                    Drawing.DrawText(Drawing.WorldToScreen(axe.AxeObj.Position).X-32, Drawing.WorldToScreen(axe.AxeObj.Position).Y, Color.Aqua, (((float) (axe.EndTick - Environment.TickCount))) + " ms");
-                    Render.Circle.DrawCircle(axe.AxeObj.Position, 120, InCatchRadius(axe) ? Program.Config.Item("DAR").GetValue<Circle>().Color : Color.DeepSkyBlue);
+                    Drawing.DrawText(
+                        Drawing.WorldToScreen(axe.AxeObj.Position).X - 32, Drawing.WorldToScreen(axe.AxeObj.Position).Y,
+                        Color.Aqua, (((float) (axe.EndTick - Environment.TickCount))) + " ms");
+                    Render.Circle.DrawCircle(
+                        axe.AxeObj.Position, 120,
+                        InCatchRadius(axe) ? Program.Config.Item("DAR").GetValue<Circle>().Color : Color.DeepSkyBlue);
                 }
             }
 
@@ -131,17 +208,10 @@ namespace FuckingAwesomeDraven
             {
                 Drawing.DrawText(
                     Drawing.WorldToScreen(Player.Position).X - 70, Drawing.WorldToScreen(Player.Position).Y + 40,
-                    Program.Config.Item("DCS").GetValue<Circle>().Color, "Catching Active:  " + Program.Config.Item("catching").GetValue<KeyBind>().Active);
+                    Program.Config.Item("DCS").GetValue<Circle>().Color,
+                    "Catching Active:  " + Program.Config.Item("catching").GetValue<KeyBind>().Active);
             }
         }
-
-        public static bool HasQBuff {get{ return Player.Buffs.Any(a => a.DisplayName.ToLower().Contains("spinning"));}}
-
-        public static bool CanAa { get { return Utils.TickCount + Game.Ping / 2 + 25 >= LastAa + Player.AttackDelay * 1000; } }
-
-        public static bool CanMove { get { return Utils.TickCount + Game.Ping / 2 >= LastAa + Player.AttackCastDelay * 1000 + Program.Config.Item("ExtraWindup").GetValue<Slider>().Value;} }
-
-        public static bool IsCatching { get { return AxeSpots.Count > 0; } }
 
         public static bool InCatchRadius(Axe a)
         {
@@ -149,8 +219,12 @@ namespace FuckingAwesomeDraven
             switch (mode)
             {
                 case 1:
-                    var b = new Geometry.Sector(Player.Position.To2D(), Game.CursorPos.To2D() - Player.Position.To2D(), Program.Config.Item("sectorAngle").GetValue<Slider>().Value * (float)Math.PI / 180, Program.Config.Item("catchRadius").GetValue<Slider>().Value).ToPolygon()
-                        .IsOutside(a.AxeObj.Position.Extend(Game.CursorPos, 30).To2D());
+                    var b =
+                        new Geometry.Sector(
+                            Player.Position.To2D(), Game.CursorPos.To2D() - Player.Position.To2D(),
+                            Program.Config.Item("sectorAngle").GetValue<Slider>().Value * (float) Math.PI / 180,
+                            Program.Config.Item("catchRadius").GetValue<Slider>().Value).ToPolygon()
+                            .IsOutside(a.AxeObj.Position.Extend(Game.CursorPos, 30).To2D());
                     return !b;
                 default:
                     return a.AxeObj.Position.Distance(Game.CursorPos) <
@@ -161,7 +235,9 @@ namespace FuckingAwesomeDraven
         public static void Orbwalk(Vector3 pos, bool moveOnly = false)
         {
             if (!pos.IsValid())
+            {
                 pos = Game.CursorPos;
+            }
 
             if (CanAa && GetTarget() != null)
             {
@@ -169,7 +245,8 @@ namespace FuckingAwesomeDraven
             }
             else if (CanMove && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None)
             {
-                if (Game.CursorPos.Distance(Player.Position) < Program.Config.Item("HoldPosRadius").GetValue<Slider>().Value)
+                if (Game.CursorPos.Distance(Player.Position) <
+                    Program.Config.Item("HoldPosRadius").GetValue<Slider>().Value)
                 {
                     Player.IssueOrder(GameObjectOrder.HoldPosition, Player.Position);
                     return;
@@ -178,7 +255,7 @@ namespace FuckingAwesomeDraven
             }
         }
 
-        public static void catchAxes()
+        public static void CatchAxes()
         {
             Orbwalker.SetAttack(false);
             Orbwalker.SetMovement(false);
@@ -194,10 +271,14 @@ namespace FuckingAwesomeDraven
                 }
             }
 
-            var turret = ObjectManager.Get<Obj_Turret>().FirstOrDefault(t => t.IsEnemy && t.Position.Distance(Player.Position) < 2000 && t.Health > 0);
+            var turret =
+                ObjectManager.Get<Obj_Turret>()
+                    .FirstOrDefault(t => t.IsEnemy && t.Position.Distance(Player.Position) < 2000 && t.Health > 0);
             for (var i = 0; i < AxeSpots.Count; i++)
             {
-                if (AxeSpots[i].EndTick < Environment.TickCount || (Program.Config.Item("ignoreTowerReticle").GetValue<bool>() && (turret != null && AxeSpots[i].AxeObj.Position.Distance(turret.Position) < 1000)))
+                if (AxeSpots[i].EndTick < Environment.TickCount ||
+                    (Program.Config.Item("ignoreTowerReticle").GetValue<bool>() &&
+                     (turret != null && AxeSpots[i].AxeObj.Position.Distance(turret.Position) < 1000)))
                 {
                     AxeSpots.RemoveAt(i);
                     return;
@@ -208,25 +289,28 @@ namespace FuckingAwesomeDraven
             {
                 Orbwalker.ForceTarget(GetTarget() as Obj_AI_Base);
             }
-                
-            else if(selectedAxe != null && Player.Distance(selectedAxe.AxeObj.Position) < 100 && InCatchRadius(selectedAxe))
+
+            else if (selectedAxe != null && Player.Distance(selectedAxe.AxeObj.Position) < 100 &&
+                     InCatchRadius(selectedAxe))
             {
                 Orbwalker.ForceTarget(null);
                 Player.IssueOrder(GameObjectOrder.MoveTo, selectedAxe.AxeObj.Position.Extend(Game.CursorPos, 95));
                 return;
 
-                 if (AxeSpots.Count == 2 && Program.Config.Item("useWCatch").GetValue<bool>() && Program.spells[Spells.W].IsReady() && !CanMakeIt((int) (((selectedAxe.EndTick / 1000) - (Environment.TickCount / 1000)) * Player.MoveSpeed)) &&
+/*
+                 if (AxeSpots.Count == 2 && Program.Config.Item("useWCatch").GetValue<bool>() && Program._spells[Spells.W].IsReady() && !CanMakeIt((int) (((selectedAxe.EndTick / 1000) - (Environment.TickCount / 1000)) * Player.MoveSpeed)) &&
                     (selectedAxe.AxeObj.Position.Distance(Player.Position) <
                      ((selectedAxe.EndTick / 1000 - Environment.TickCount / 1000) *
                       (Player.MoveSpeed *
-                       new[] { 1.40f, 1.45f, 1.50f, 1.55f, 1.60f }[Program.spells[Spells.W].Level - 1]))))
+                       new[] { 1.40f, 1.45f, 1.50f, 1.55f, 1.60f }[Program._spells[Spells.W].Level - 1]))))
                 {
-                    Program.spells[Spells.W].Cast();
+                    Program._spells[Spells.W].Cast();
                     Player.IssueOrder(GameObjectOrder.MoveTo, selectedAxe.AxeObj.Position.Extend(Game.CursorPos, 95));
                     return;
                 }
+*/
             }
-                  
+
 
             if (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None)
             {
@@ -238,49 +322,59 @@ namespace FuckingAwesomeDraven
                     Orbwalker.SetOrbwalkingPoint(Game.CursorPos);
                     Orbwalker.SetAttack(true);
                     if (selectedAxe != null && Player.Distance(selectedAxe.AxeObj.Position) < 100)
+                    {
                         return;
+                    }
                     Orbwalker.SetMovement(true);
                     return;
                 }
                 if ((Player.AttackDelay +
                      ((Player.Distance(selectedAxe.AxeObj.Position.Extend(Game.CursorPos, 100)) / Player.MoveSpeed) *
                       1000) + Environment.TickCount < selectedAxe.EndTick &&
-                     GetTarget().IsValidTarget(Orbwalking.GetRealAutoAttackRange(Player)) && CanAa || Player.Distance(selectedAxe.AxeObj.Position) <= 100))
+                     GetTarget().IsValidTarget(Orbwalking.GetRealAutoAttackRange(Player)) && CanAa ||
+                     Player.Distance(selectedAxe.AxeObj.Position) <= 100))
                 {
                     Orbwalker.SetOrbwalkingPoint(Game.CursorPos);
                     Orbwalker.SetAttack(true);
                     if (Player.Distance(selectedAxe.AxeObj.Position) < 100)
+                    {
                         return;
+                    }
                     Orbwalker.SetMovement(true);
                     return;
                 }
             }
 
-            if (selectedAxe == null) return;
+            if (selectedAxe == null)
+            {
+                return;
+            }
 
             if (Player.Distance(selectedAxe.AxeObj.Position) < 100 || !InCatchRadius(selectedAxe))
+            {
                 return;
+            }
 
 
             Orbwalker.SetMovement(true);
             Player.IssueOrder(GameObjectOrder.MoveTo, selectedAxe.AxeObj.Position.Extend(Game.CursorPos, 95));
-            return;
 
-            if (AxeSpots.Count == 2 && Program.Config.Item("useWCatch").GetValue<bool>() && Program.spells[Spells.W].IsReady() &&
-                    selectedAxe.AxeObj.Position.Distance(Player.Position) >
-                    ((selectedAxe.EndTick / 1000 - Environment.TickCount / 1000) * (Player.MoveSpeed)) &&
-                    (selectedAxe.AxeObj.Position.Distance(Player.Position) <
-                     ((selectedAxe.EndTick / 1000 - Environment.TickCount / 1000) *
-                      (Player.MoveSpeed *
-                       new[] { 1.40f, 1.45f, 1.50f, 1.55f, 1.60f }[Program.spells[Spells.W].Level - 1]))))
-                {
-                    Program.spells[Spells.W].Cast();
-                    Orbwalker.SetMovement(true);
-                    Player.IssueOrder(GameObjectOrder.MoveTo, selectedAxe.AxeObj.Position.Extend(Game.CursorPos, 95));
-                    return;
-                }
+/*
+            if (AxeSpots.Count == 2 && Program.Config.Item("useWCatch").GetValue<bool>() &&
+                Program._spells[Spells.W].IsReady() &&
+                selectedAxe.AxeObj.Position.Distance(Player.Position) >
+                ((selectedAxe.EndTick / 1000 - Environment.TickCount / 1000) * (Player.MoveSpeed)) &&
+                (selectedAxe.AxeObj.Position.Distance(Player.Position) <
+                 ((selectedAxe.EndTick / 1000 - Environment.TickCount / 1000) *
+                  (Player.MoveSpeed * new[] { 1.40f, 1.45f, 1.50f, 1.55f, 1.60f }[Program._spells[Spells.W].Level - 1]))))
+            {
+                Program._spells[Spells.W].Cast();
+                Orbwalker.SetMovement(true);
+                Player.IssueOrder(GameObjectOrder.MoveTo, selectedAxe.AxeObj.Position.Extend(Game.CursorPos, 95));
+                return;
+            }
+*/
         }
-
 
         public static bool CanMakeIt(int time)
         {
@@ -296,19 +390,24 @@ namespace FuckingAwesomeDraven
                 }
             }
 
-            if (selectedAxe == null) return true;
+            if (selectedAxe == null)
+            {
+                return true;
+            }
 
             return time +
-                   ((Player.Distance(selectedAxe.AxeObj.Position.Extend(Game.CursorPos, 100))/Player.MoveSpeed)*1000) +
+                   ((Player.Distance(selectedAxe.AxeObj.Position.Extend(Game.CursorPos, 100)) / Player.MoveSpeed) * 1000) +
                    Environment.TickCount < selectedAxe.EndTick;
         }
-
 
         //Events
 
         public static void Obj_AI_Hero_OnProcessSpellCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
         {
-            if (!sender.IsMe) return;
+            if (!sender.IsMe)
+            {
+                return;
+            }
             if (args.SData.IsAutoAttack())
             {
                 LastAa = Environment.TickCount;
@@ -321,16 +420,15 @@ namespace FuckingAwesomeDraven
 
         public static void OnCreate(GameObject sender, EventArgs args)
         {
-            var Name = sender.Name;
+            var name = sender.Name;
 
-            if ((AxesList.Contains(Name)) &&
+            if ((AxesList.Contains(name)) &&
                 sender.Position.Distance(ObjectManager.Player.Position) / ObjectManager.Player.MoveSpeed <= 2)
             {
                 AxeSpots.Add(new Axe(sender));
             }
 
-            if ((QBuffList.Contains(Name)) &&
-                sender.Position.Distance(ObjectManager.Player.Position) < 100)
+            if ((QBuffList.Contains(name)) && sender.Position.Distance(ObjectManager.Player.Position) < 100)
             {
                 CurrentAxes += 1;
             }
@@ -347,17 +445,22 @@ namespace FuckingAwesomeDraven
                 }
             }
 
-            if ((QBuffList.Contains(sender.Name)) &&
-                sender.Position.Distance(ObjectManager.Player.Position) < 300)
+            if ((QBuffList.Contains(sender.Name)) && sender.Position.Distance(ObjectManager.Player.Position) < 300)
             {
                 if (CurrentAxes == 0)
+                {
                     CurrentAxes = 0;
+                }
                 if (CurrentAxes <= 2)
+                {
                     CurrentAxes = CurrentAxes - 1;
-                else CurrentAxes = CurrentAxes - 1;
+                }
+                else
+                {
+                    CurrentAxes = CurrentAxes - 1;
+                }
             }
         }
-
 
         // Orbwalker stuff
 
@@ -370,17 +473,21 @@ namespace FuckingAwesomeDraven
                             minion.IsValidTarget() && minion.Team != GameObjectTeam.Neutral &&
                             Orbwalking.InAutoAttackRange(minion) &&
                             HealthPrediction.LaneClearHealthPrediction(
-                                minion, (int)((Player.AttackDelay * 1000) * 2), Program.Config.Item("FarmDelay").GetValue<Slider>().Value) <= RealAutoAttack(minion));
+                                minion, (int) ((Player.AttackDelay * 1000) * 2),
+                                Program.Config.Item("FarmDelay").GetValue<Slider>().Value) <= RealAutoAttack(minion));
         }
 
         public static AttackableUnit GetTarget()
         {
-            AttackableUnit result = null;
+            AttackableUnit result;
 
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.None)
+            {
                 return null;
+            }
             /*Killable Minion*/
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed ||
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear ||
+                Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed ||
                 Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LastHit)
             {
                 foreach (var minion in
@@ -388,14 +495,12 @@ namespace FuckingAwesomeDraven
                         .Where(
                             minion =>
                                 minion.IsValidTarget() && Orbwalker.InAutoAttackRange(minion) &&
-                                minion.Health <
-                                2 *
-                                (RealAutoAttack(minion)))
-                    )
+                                minion.Health < 2 * (RealAutoAttack(minion))))
                 {
-                    var t = (int)(Player.AttackCastDelay * 1000) - 100 + Game.Ping / 2 +
-                            1000 * (int)Player.Distance(minion) / (int)Orbwalking.GetMyProjectileSpeed();
-                    var predHealth = HealthPrediction.GetHealthPrediction(minion, t, Program.Config.Item("FarmDelay").GetValue<Slider>().Value);
+                    var t = (int) (Player.AttackCastDelay * 1000) - 100 + Game.Ping / 2 +
+                            1000 * (int) Player.Distance(minion) / (int) Orbwalking.GetMyProjectileSpeed();
+                    var predHealth = HealthPrediction.GetHealthPrediction(
+                        minion, t, Program.Config.Item("FarmDelay").GetValue<Slider>().Value);
 
                     if (minion.Team != GameObjectTeam.Neutral && MinionManager.IsMinion(minion, true))
                     {
@@ -419,7 +524,8 @@ namespace FuckingAwesomeDraven
 
                 /* inhibitor */
                 foreach (var turret in
-                    ObjectManager.Get<Obj_BarracksDampener>().Where(t => t.IsValidTarget() && Orbwalker.InAutoAttackRange(t)))
+                    ObjectManager.Get<Obj_BarracksDampener>()
+                        .Where(t => t.IsValidTarget() && Orbwalker.InAutoAttackRange(t)))
                 {
                     return turret;
                 }
@@ -443,13 +549,15 @@ namespace FuckingAwesomeDraven
             }
 
             /*Jungle minions*/
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear ||
+                Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
             {
                 result =
                     ObjectManager.Get<Obj_AI_Minion>()
                         .Where(
                             mob =>
-                                mob.IsValidTarget() && Orbwalker.InAutoAttackRange(mob) && mob.Team == GameObjectTeam.Neutral)
+                                mob.IsValidTarget() && Orbwalker.InAutoAttackRange(mob) &&
+                                mob.Team == GameObjectTeam.Neutral)
                         .MaxOrDefault(mob => mob.MaxHealth);
                 if (result != null)
                 {
@@ -465,7 +573,8 @@ namespace FuckingAwesomeDraven
                     if (_prevMinion.IsValidTarget() && Orbwalker.InAutoAttackRange(_prevMinion))
                     {
                         var predHealth = HealthPrediction.LaneClearHealthPrediction(
-                            _prevMinion, (int)((Player.AttackDelay * 1000) * 2f), Program.Config.Item("FarmDelay").GetValue<Slider>().Value);
+                            _prevMinion, (int) ((Player.AttackDelay * 1000) * 2f),
+                            Program.Config.Item("FarmDelay").GetValue<Slider>().Value);
                         if (predHealth >= 2 * RealAutoAttack(_prevMinion) ||
                             Math.Abs(predHealth - _prevMinion.Health) < float.Epsilon)
                         {
@@ -474,24 +583,24 @@ namespace FuckingAwesomeDraven
                     }
 
                     result = (from minion in
-                                  ObjectManager.Get<Obj_AI_Minion>()
-                                      .Where(minion => minion.IsValidTarget() && Orbwalker.InAutoAttackRange(minion))
-                              let predHealth =
-                                  HealthPrediction.LaneClearHealthPrediction(
-                                      minion, (int)((Player.AttackDelay * 1000) * 2f), Program.Config.Item("FarmDelay").GetValue<Slider>().Value)
-                              where
-                                  predHealth >= 2 * RealAutoAttack(minion) ||
-                                  Math.Abs(predHealth - minion.Health) < float.Epsilon
-                              select minion).MaxOrDefault(m => m.Health);
+                        ObjectManager.Get<Obj_AI_Minion>()
+                            .Where(minion => minion.IsValidTarget() && Orbwalker.InAutoAttackRange(minion))
+                        let predHealth =
+                            HealthPrediction.LaneClearHealthPrediction(
+                                minion, (int) ((Player.AttackDelay * 1000) * 2f),
+                                Program.Config.Item("FarmDelay").GetValue<Slider>().Value)
+                        where
+                            predHealth >= 2 * RealAutoAttack(minion) ||
+                            Math.Abs(predHealth - minion.Health) < float.Epsilon
+                        select minion).MaxOrDefault(m => m.Health);
 
                     if (result != null)
                     {
-                        _prevMinion = (Obj_AI_Minion)result;
+                        _prevMinion = (Obj_AI_Minion) result;
                     }
                 }
             }
             return null;
         }
-
     }
 }

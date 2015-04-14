@@ -1,24 +1,40 @@
-﻿using System;
-using System.Collections.Generic;
+﻿// This file is part of LeagueSharp.Common.
+// 
+// LeagueSharp.Common is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// LeagueSharp.Common is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with LeagueSharp.Common.  If not, see <http://www.gnu.org/licenses/>.
+
+using System;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using LeagueSharp;
 using LeagueSharp.Common;
 
 namespace FuckingAwesomeLeeSinReborn
 {
-    class StateHandler
+    internal static class StateHandler
     {
-        public static Obj_AI_Hero Player { get { return ObjectManager.Player; } }
+        private static Obj_AI_Hero Player
+        {
+            get { return ObjectManager.Player; }
+        }
 
         public static void Combo()
         {
             var target = TargetSelector.GetTarget(1200, TargetSelector.DamageType.Physical);
 
             if (!target.IsValidTarget())
+            {
                 return;
+            }
 
             var useQ = Program.Config.Item("CQ").GetValue<bool>();
             var useE = Program.Config.Item("CE").GetValue<bool>();
@@ -28,54 +44,65 @@ namespace FuckingAwesomeLeeSinReborn
 
             CheckHandler.UseItems(target);
 
-            if (useR && useQ && CheckHandler.spells[SpellSlot.R].IsReady() && CheckHandler.spells[SpellSlot.Q].IsReady() && (CheckHandler.QState || target.HasQBuff()) &&
-                CheckHandler.spells[SpellSlot.R].GetDamage(target) + (CheckHandler.QState ? CheckHandler.spells[SpellSlot.Q].GetDamage(target) : 0) +
-                CheckHandler.Q2Damage(target, CheckHandler.spells[SpellSlot.R].GetDamage(target) + (CheckHandler.QState ? CheckHandler.spells[SpellSlot.Q].GetDamage(target) : 0)) > target.Health)
+            if (useR && useQ && CheckHandler._spells[SpellSlot.R].IsReady() &&
+                CheckHandler._spells[SpellSlot.Q].IsReady() && (CheckHandler.QState || target.HasQBuff()) &&
+                CheckHandler._spells[SpellSlot.R].GetDamage(target) +
+                (CheckHandler.QState ? CheckHandler._spells[SpellSlot.Q].GetDamage(target) : 0) +
+                CheckHandler.Q2Damage(
+                    target,
+                    CheckHandler._spells[SpellSlot.R].GetDamage(target) +
+                    (CheckHandler.QState ? CheckHandler._spells[SpellSlot.Q].GetDamage(target) : 0)) > target.Health)
             {
                 if (CheckHandler.QState)
                 {
-                    CheckHandler.spells[SpellSlot.Q].CastIfHitchanceEquals(target, HitChance.High);
+                    CheckHandler._spells[SpellSlot.Q].CastIfHitchanceEquals(target, HitChance.High);
                     return;
                 }
-                CheckHandler.spells[SpellSlot.R].CastOnUnit(target);
-                Utility.DelayAction.Add(300, () => CheckHandler.spells[SpellSlot.Q].Cast());
+                CheckHandler._spells[SpellSlot.R].CastOnUnit(target);
+                Utility.DelayAction.Add(300, () => CheckHandler._spells[SpellSlot.Q].Cast());
             }
 
-            if (useR && CheckHandler.spells[SpellSlot.R].IsReady() &&
-                CheckHandler.spells[SpellSlot.R].GetDamage(target) > target.Health)
+            if (useR && CheckHandler._spells[SpellSlot.R].IsReady() &&
+                CheckHandler._spells[SpellSlot.R].GetDamage(target) > target.Health)
             {
-                CheckHandler.spells[SpellSlot.R].CastOnUnit(target);
+                CheckHandler._spells[SpellSlot.R].CastOnUnit(target);
                 return;
             }
 
-            if (useQ && !CheckHandler.QState && CheckHandler.spells[SpellSlot.Q].IsReady() && target.HasQBuff() && (CheckHandler.LastQ + 2700 < Environment.TickCount || CheckHandler.spells[SpellSlot.Q].GetDamage(target, 1) > target.Health || target.Distance(Player) > Orbwalking.GetRealAutoAttackRange(Player) + 50))
+            if (useQ && !CheckHandler.QState && CheckHandler._spells[SpellSlot.Q].IsReady() && target.HasQBuff() &&
+                (CheckHandler.LastQ + 2700 < Environment.TickCount ||
+                 CheckHandler._spells[SpellSlot.Q].GetDamage(target, 1) > target.Health ||
+                 target.Distance(Player) > Orbwalking.GetRealAutoAttackRange(Player) + 50))
             {
-                CheckHandler.spells[SpellSlot.Q].Cast();
+                CheckHandler._spells[SpellSlot.Q].Cast();
                 return;
             }
 
-            if (forcePassive && CheckHandler.PassiveStacks > minPassive && Orbwalking.GetRealAutoAttackRange(Player) > Player.Distance(target))
-                return;
-
-            if (CheckHandler.spells[SpellSlot.Q].IsReady() && useQ)
+            if (forcePassive && CheckHandler.PassiveStacks > minPassive &&
+                Orbwalking.GetRealAutoAttackRange(Player) > Player.Distance(target))
             {
-                if (CheckHandler.QState && target.Distance(Player) < CheckHandler.spells[SpellSlot.Q].Range)
+                return;
+            }
+
+            if (CheckHandler._spells[SpellSlot.Q].IsReady() && useQ)
+            {
+                if (CheckHandler.QState && target.Distance(Player) < CheckHandler._spells[SpellSlot.Q].Range)
                 {
                     CastQ(target, Program.Config.Item("smiteQ").GetValue<bool>());
                     return;
                 }
             }
 
-            if (CheckHandler.spells[SpellSlot.E].IsReady() && useE)
+            if (CheckHandler._spells[SpellSlot.E].IsReady() && useE)
             {
-                if (CheckHandler.EState && target.Distance(Player) < CheckHandler.spells[SpellSlot.E].Range)
+                if (CheckHandler.EState && target.Distance(Player) < CheckHandler._spells[SpellSlot.E].Range)
                 {
-                    CheckHandler.spells[SpellSlot.E].Cast();
+                    CheckHandler._spells[SpellSlot.E].Cast();
                     return;
                 }
                 if (!CheckHandler.EState && target.Distance(Player) > Orbwalking.GetRealAutoAttackRange(Player) + 50)
                 {
-                    CheckHandler.spells[SpellSlot.E].Cast();
+                    CheckHandler._spells[SpellSlot.E].Cast();
                 }
             }
         }
@@ -93,31 +120,40 @@ namespace FuckingAwesomeLeeSinReborn
 
             CheckHandler.UseItems(target);
 
-            if (!target.IsValidTarget()) return;
-
-            if (target.HasBuffOfType(BuffType.Knockback) && target.Distance(Player) > 300 && target.HasQBuff() && !CheckHandler.QState)
+            if (!target.IsValidTarget())
             {
-                CheckHandler.spells[SpellSlot.Q].Cast();
                 return;
             }
 
-            if (!CheckHandler.spells[SpellSlot.R].IsReady()) return;
+            if (target.HasBuffOfType(BuffType.Knockback) && target.Distance(Player) > 300 && target.HasQBuff() &&
+                !CheckHandler.QState)
+            {
+                CheckHandler._spells[SpellSlot.Q].Cast();
+                return;
+            }
 
-            if (CheckHandler.spells[SpellSlot.Q].IsReady() && CheckHandler.QState)
+            if (!CheckHandler._spells[SpellSlot.R].IsReady())
+            {
+                return;
+            }
+
+            if (CheckHandler._spells[SpellSlot.Q].IsReady() && CheckHandler.QState)
             {
                 CastQ(target, Program.Config.Item("smiteQ").GetValue<bool>());
                 return;
             }
             if (target.HasQBuff() && !target.HasBuffOfType(BuffType.Knockback))
             {
-                if (target.Distance(Player) < CheckHandler.spells[SpellSlot.R].Range && CheckHandler.spells[SpellSlot.R].IsReady())
+                if (target.Distance(Player) < CheckHandler._spells[SpellSlot.R].Range &&
+                    CheckHandler._spells[SpellSlot.R].IsReady())
                 {
-                    CheckHandler.spells[SpellSlot.R].CastOnUnit(target);
+                    CheckHandler._spells[SpellSlot.R].CastOnUnit(target);
                     return;
                 }
                 if (target.Distance(Player) < 600 && CheckHandler.WState)
                 {
-                    WardjumpHandler.Jump(Player.Position.Extend(target.Position, Player.Position.Distance(target.Position) - 50));
+                    WardjumpHandler.Jump(
+                        Player.Position.Extend(target.Position, Player.Position.Distance(target.Position) - 50));
                 }
             }
         }
@@ -127,7 +163,9 @@ namespace FuckingAwesomeLeeSinReborn
             var target = TargetSelector.GetTarget(1200, TargetSelector.DamageType.Physical);
 
             if (!target.IsValidTarget())
+            {
                 return;
+            }
 
             var useQ = Program.Config.Item("HQ").GetValue<bool>();
             var useE = Program.Config.Item("HE").GetValue<bool>();
@@ -135,43 +173,48 @@ namespace FuckingAwesomeLeeSinReborn
             var minPassive = Program.Config.Item("HpassiveCheckCount").GetValue<Slider>().Value;
 
 
-            if (!CheckHandler.QState && CheckHandler.LastQ + 200 < Environment.TickCount && useQ && !CheckHandler.QState && CheckHandler.spells[SpellSlot.Q].IsReady() && target.HasQBuff() && (CheckHandler.LastQ + 2700 < Environment.TickCount || CheckHandler.spells[SpellSlot.Q].GetDamage(target, 1) > target.Health || target.Distance(Player) > Orbwalking.GetRealAutoAttackRange(Player) + 50))
+            if (!CheckHandler.QState && CheckHandler.LastQ + 200 < Environment.TickCount && useQ && !CheckHandler.QState &&
+                CheckHandler._spells[SpellSlot.Q].IsReady() && target.HasQBuff() &&
+                (CheckHandler.LastQ + 2700 < Environment.TickCount ||
+                 CheckHandler._spells[SpellSlot.Q].GetDamage(target, 1) > target.Health ||
+                 target.Distance(Player) > Orbwalking.GetRealAutoAttackRange(Player) + 50))
             {
-                CheckHandler.spells[SpellSlot.Q].Cast();
+                CheckHandler._spells[SpellSlot.Q].Cast();
                 return;
             }
 
-            if (forcePassive && CheckHandler.PassiveStacks > minPassive && Orbwalking.GetRealAutoAttackRange(Player) > Player.Distance(target))
-                return;
-
-            if (CheckHandler.spells[SpellSlot.Q].IsReady() && useQ && CheckHandler.LastQ + 200 < Environment.TickCount)
+            if (forcePassive && CheckHandler.PassiveStacks > minPassive &&
+                Orbwalking.GetRealAutoAttackRange(Player) > Player.Distance(target))
             {
-                if (CheckHandler.QState && target.Distance(Player) < CheckHandler.spells[SpellSlot.Q].Range)
+                return;
+            }
+
+            if (CheckHandler._spells[SpellSlot.Q].IsReady() && useQ && CheckHandler.LastQ + 200 < Environment.TickCount)
+            {
+                if (CheckHandler.QState && target.Distance(Player) < CheckHandler._spells[SpellSlot.Q].Range)
                 {
                     CastQ(target);
                     return;
                 }
             }
 
-            if (CheckHandler.spells[SpellSlot.E].IsReady() && useE && CheckHandler.LastE + 200 < Environment.TickCount)
+            if (CheckHandler._spells[SpellSlot.E].IsReady() && useE && CheckHandler.LastE + 200 < Environment.TickCount)
             {
-                if (CheckHandler.EState && target.Distance(Player) < CheckHandler.spells[SpellSlot.E].Range)
+                if (CheckHandler.EState && target.Distance(Player) < CheckHandler._spells[SpellSlot.E].Range)
                 {
-                    CheckHandler.spells[SpellSlot.E].Cast();
+                    CheckHandler._spells[SpellSlot.E].Cast();
                     return;
                 }
                 if (!CheckHandler.EState && target.Distance(Player) > Orbwalking.GetRealAutoAttackRange(Player) + 50)
                 {
-                    CheckHandler.spells[SpellSlot.E].Cast();
+                    CheckHandler._spells[SpellSlot.E].Cast();
                 }
             }
         }
 
-        public static void Wave()
+        private static void Wave()
         {
-            var target =
-                MinionManager.GetMinions(1100)
-                    .FirstOrDefault();
+            Obj_AI_Base target = MinionManager.GetMinions(1100).FirstOrDefault();
 
             if (!target.IsValidTarget() || target == null)
             {
@@ -184,37 +227,40 @@ namespace FuckingAwesomeLeeSinReborn
             var useQ = Program.Config.Item("QWC").GetValue<bool>();
             var useE = Program.Config.Item("EWC").GetValue<bool>();
 
-            if (useQ && !CheckHandler.QState && CheckHandler.spells[SpellSlot.Q].IsReady() && target.HasQBuff() && (CheckHandler.LastQ + 2700 < Environment.TickCount || CheckHandler.spells[SpellSlot.Q].GetDamage(target, 1) > target.Health || target.Distance(Player) > Orbwalking.GetRealAutoAttackRange(Player) + 50))
+            if (useQ && !CheckHandler.QState && CheckHandler._spells[SpellSlot.Q].IsReady() && target.HasQBuff() &&
+                (CheckHandler.LastQ + 2700 < Environment.TickCount ||
+                 CheckHandler._spells[SpellSlot.Q].GetDamage(target, 1) > target.Health ||
+                 target.Distance(Player) > Orbwalking.GetRealAutoAttackRange(Player) + 50))
             {
-                CheckHandler.spells[SpellSlot.Q].Cast();
+                CheckHandler._spells[SpellSlot.Q].Cast();
                 return;
             }
 
-            if (CheckHandler.spells[SpellSlot.Q].IsReady() && useQ && CheckHandler.LastQ + 200 < Environment.TickCount)
+            if (CheckHandler._spells[SpellSlot.Q].IsReady() && useQ && CheckHandler.LastQ + 200 < Environment.TickCount)
             {
-                if (CheckHandler.QState && target.Distance(Player) < CheckHandler.spells[SpellSlot.Q].Range)
+                if (CheckHandler.QState && target.Distance(Player) < CheckHandler._spells[SpellSlot.Q].Range)
                 {
-                    CheckHandler.spells[SpellSlot.Q].Cast(target);
+                    CheckHandler._spells[SpellSlot.Q].Cast(target);
                     return;
                 }
             }
 
-            if (CheckHandler.spells[SpellSlot.E].IsReady() && useE && CheckHandler.LastE + 200 < Environment.TickCount)
+            if (CheckHandler._spells[SpellSlot.E].IsReady() && useE && CheckHandler.LastE + 200 < Environment.TickCount)
             {
-                if (CheckHandler.EState && target.Distance(Player) < CheckHandler.spells[SpellSlot.E].Range)
+                if (CheckHandler.EState && target.Distance(Player) < CheckHandler._spells[SpellSlot.E].Range)
                 {
-                    CheckHandler.spells[SpellSlot.E].Cast();
+                    CheckHandler._spells[SpellSlot.E].Cast();
                 }
             }
         }
 
         public static void JungleClear()
         {
-            var target =
+            Obj_AI_Base target =
                 MinionManager.GetMinions(1100, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth)
                     .FirstOrDefault();
 
-            if (!target.IsValidTarget() || target ==  null)
+            if (!target.IsValidTarget() || target == null)
             {
                 Wave();
                 return;
@@ -227,64 +273,75 @@ namespace FuckingAwesomeLeeSinReborn
             CheckHandler.UseItems(target, true);
 
             if (CheckHandler.PassiveStacks > 0 || CheckHandler.LastSpell + 400 > Environment.TickCount)
-                return;
-
-            if (CheckHandler.spells[SpellSlot.Q].IsReady() && useQ)
             {
-                if (CheckHandler.QState && target.Distance(Player) < CheckHandler.spells[SpellSlot.Q].Range && CheckHandler.LastQ + 200 < Environment.TickCount)
+                return;
+            }
+
+            if (CheckHandler._spells[SpellSlot.Q].IsReady() && useQ)
+            {
+                if (CheckHandler.QState && target.Distance(Player) < CheckHandler._spells[SpellSlot.Q].Range &&
+                    CheckHandler.LastQ + 200 < Environment.TickCount)
                 {
-                    CheckHandler.spells[SpellSlot.Q].Cast(target);
+                    CheckHandler._spells[SpellSlot.Q].Cast(target);
                     CheckHandler.LastSpell = Environment.TickCount;
                     return;
                 }
-                CheckHandler.spells[SpellSlot.Q].Cast();
+                CheckHandler._spells[SpellSlot.Q].Cast();
                 CheckHandler.LastSpell = Environment.TickCount;
                 return;
             }
 
-            if (CheckHandler.spells[SpellSlot.W].IsReady() && useW)
+            if (CheckHandler._spells[SpellSlot.W].IsReady() && useW)
             {
                 if (CheckHandler.WState && target.Distance(Player) < Orbwalking.GetRealAutoAttackRange(Player))
                 {
-                    CheckHandler.spells[SpellSlot.W].CastOnUnit(Player);
+                    CheckHandler._spells[SpellSlot.W].CastOnUnit(Player);
                     CheckHandler.LastSpell = Environment.TickCount;
                     return;
                 }
                 if (CheckHandler.WState)
+                {
                     return;
-                CheckHandler.spells[SpellSlot.W].Cast();
+                }
+                CheckHandler._spells[SpellSlot.W].Cast();
                 CheckHandler.LastSpell = Environment.TickCount;
                 return;
             }
 
-            if (CheckHandler.spells[SpellSlot.E].IsReady() && useE)
+            if (CheckHandler._spells[SpellSlot.E].IsReady() && useE)
             {
-                if (CheckHandler.EState && target.Distance(Player) < CheckHandler.spells[SpellSlot.E].Range)
+                if (CheckHandler.EState && target.Distance(Player) < CheckHandler._spells[SpellSlot.E].Range)
                 {
-                    CheckHandler.spells[SpellSlot.E].Cast();
+                    CheckHandler._spells[SpellSlot.E].Cast();
                     CheckHandler.LastSpell = Environment.TickCount;
                     return;
                 }
                 if (CheckHandler.EState)
+                {
                     return;
-                CheckHandler.spells[SpellSlot.E].Cast();
+                }
+                CheckHandler._spells[SpellSlot.E].Cast();
                 CheckHandler.LastSpell = Environment.TickCount;
             }
         }
 
-        public static void CastQ(Obj_AI_Base target, bool smiteQ = false)
+        private static void CastQ(Obj_AI_Base target, bool smiteQ = false)
         {
-            var qData = CheckHandler.spells[SpellSlot.Q].GetPrediction(target);
-            if (CheckHandler.spells[SpellSlot.Q].IsReady() &&
-                target.IsValidTarget(CheckHandler.spells[SpellSlot.Q].Range) && qData.Hitchance != HitChance.Collision)
+            var qData = CheckHandler._spells[SpellSlot.Q].GetPrediction(target);
+            if (CheckHandler._spells[SpellSlot.Q].IsReady() &&
+                target.IsValidTarget(CheckHandler._spells[SpellSlot.Q].Range) && qData.Hitchance != HitChance.Collision)
             {
-                CheckHandler.spells[SpellSlot.Q].CastIfHitchanceEquals(target, HitChance.High);
+                CheckHandler._spells[SpellSlot.Q].CastIfHitchanceEquals(target, HitChance.High);
             }
-            else if (CheckHandler.spells[SpellSlot.Q].IsReady() &&
-                target.IsValidTarget(CheckHandler.spells[SpellSlot.Q].Range) && qData.CollisionObjects.Count(a => a.NetworkId != target.NetworkId && a.IsMinion) == 1 && Player.GetSpellSlot(CheckHandler.SmiteSpellName()).IsReady())
+            else if (CheckHandler._spells[SpellSlot.Q].IsReady() &&
+                     target.IsValidTarget(CheckHandler._spells[SpellSlot.Q].Range) &&
+                     qData.CollisionObjects.Count(a => a.NetworkId != target.NetworkId && a.IsMinion) == 1 &&
+                     Player.GetSpellSlot(CheckHandler.SmiteSpellName()).IsReady())
             {
-                Player.Spellbook.CastSpell(Player.GetSpellSlot(CheckHandler.SmiteSpellName()), qData.CollisionObjects.Where(a => a.NetworkId != target.NetworkId && a.IsMinion).ToList()[0]);
-                CheckHandler.spells[SpellSlot.Q].Cast(qData.CastPosition);
+                Player.Spellbook.CastSpell(
+                    Player.GetSpellSlot(CheckHandler.SmiteSpellName()),
+                    qData.CollisionObjects.Where(a => a.NetworkId != target.NetworkId && a.IsMinion).ToList()[0]);
+                CheckHandler._spells[SpellSlot.Q].Cast(qData.CastPosition);
             }
         }
     }

@@ -21,7 +21,7 @@ using LeagueSharp.Common;
 
 namespace iFuckingAwesomeGraves
 {
-    internal class Program
+    internal static class Program
     {
         private static Orbwalking.Orbwalker _orbwalker;
         private static Menu _menu;
@@ -61,6 +61,9 @@ namespace iFuckingAwesomeGraves
             {
                 return;
             }
+
+            CastImmobileSpells();
+
             switch (_orbwalker.ActiveMode)
             {
                 case Orbwalking.OrbwalkingMode.Combo:
@@ -68,6 +71,9 @@ namespace iFuckingAwesomeGraves
                     break;
                 case Orbwalking.OrbwalkingMode.Mixed:
                     DoHarass();
+                    break;
+                case Orbwalking.OrbwalkingMode.LaneClear:
+                    DoLaneclear();
                     break;
             }
         }
@@ -83,54 +89,79 @@ namespace iFuckingAwesomeGraves
 
         private static void DoCombo()
         {
-            CastBuckshot();
-            CastSmokeScreen();
+            if (_menu.Item("useQC").GetValue<bool>())
+            {
+                CastBuckshot();
+            }
+            if (_menu.Item("useWC").GetValue<bool>())
+            {
+                CastSmokeScreen();
+            }
             CastQuickdraw();
             CastCollateralDamage();
-            CollateralDamageKs();
+            //CollateralDamageKs();
         }
 
         private static void DoHarass()
         {
-            CastBuckshot();
-            CastSmokeScreen();
+            if (_menu.Item("useQH").GetValue<bool>())
+            {
+                CastBuckshot();
+            }
+            if (_menu.Item("useWH").GetValue<bool>())
+            {
+                CastSmokeScreen();
+            }
         }
+
+        private static void DoLaneclear() {}
 
         #endregion
 
         #region spell casting
 
+        private static void CastImmobileSpells()
+        {
+            var qTarget = TargetSelector.GetTarget(_spells[SpellSlot.Q].Range, TargetSelector.DamageType.Physical);
+            var wTarget = TargetSelector.GetTarget(_spells[SpellSlot.W].Range, TargetSelector.DamageType.Physical);
+
+            if (_menu.Item("qImmobile").GetValue<bool>() && _spells[SpellSlot.Q].IsReady() &&
+                _spells[SpellSlot.Q].IsInRange(qTarget) && qTarget.IsValidTarget(_spells[SpellSlot.Q].Range))
+            {
+                _spells[SpellSlot.Q].CastIfHitchanceEquals(qTarget, HitChance.Immobile);
+            }
+
+            if (_menu.Item("wImmobile").GetValue<bool>() && _spells[SpellSlot.W].IsReady() &&
+                _spells[SpellSlot.W].GetPrediction(wTarget, true).AoeTargetsHitCount >=
+                _menu.Item("wCount").GetValue<Slider>().Value)
+            {
+                _spells[SpellSlot.W].CastIfHitchanceEquals(wTarget, HitChance.Immobile);
+            }
+        }
+
         private static void CastBuckshot()
         {
             var qTarget = TargetSelector.GetTarget(_spells[SpellSlot.Q].Range, TargetSelector.DamageType.Physical);
-            if (_menu.Item("useQC").GetValue<bool>() ||
-                _menu.Item("useQH").GetValue<bool>() && qTarget.IsValidTarget(_spells[SpellSlot.Q].Range))
+            if (qTarget.IsValidTarget(_spells[SpellSlot.Q].Range))
             {
                 if (_spells[SpellSlot.Q].IsReady() && _spells[SpellSlot.Q].IsInRange(qTarget))
                 {
                     _spells[SpellSlot.Q].CastIfHitchanceEquals(qTarget, GetCustomHitChance());
                 }
             }
-
-            if (_menu.Item("com.ifag.combo.buckshot.qImmobile").GetValue<bool>() && _spells[SpellSlot.Q].IsReady() &&
-                _spells[SpellSlot.Q].IsInRange(qTarget) && qTarget.IsValidTarget(_spells[SpellSlot.Q].Range))
-            {
-                _spells[SpellSlot.Q].CastIfHitchanceEquals(qTarget, HitChance.Immobile);
-            }
         }
 
         private static void CastSmokeScreen()
         {
             var wTarget = TargetSelector.GetTarget(_spells[SpellSlot.W].Range, TargetSelector.DamageType.Physical);
-            if (_menu.Item("useWC").GetValue<bool>() ||
-                _menu.Item("useWH").GetValue<bool>() && wTarget.IsValidTarget(_spells[SpellSlot.W].Range))
+            if (wTarget.IsValidTarget(_spells[SpellSlot.W].Range))
             {
                 if (_spells[SpellSlot.W].IsReady() && _spells[SpellSlot.W].IsInRange(wTarget))
                 {
                     _spells[SpellSlot.W].CastIfHitchanceEquals(wTarget, GetCustomHitChance());
                 }
             }
-            //TODO finish
+            //TODO
         }
 
         private static void CastQuickdraw()
@@ -147,12 +178,13 @@ namespace iFuckingAwesomeGraves
             var rTarget = TargetSelector.GetTarget(_spells[SpellSlot.R].Range, TargetSelector.DamageType.Physical);
             if (_menu.Item("useRC").GetValue<bool>() && rTarget.IsValidTarget(_spells[SpellSlot.R].Range))
             {
+                if (_menu.Item("overkillCheck").GetValue<bool>() && _spells[SpellSlot.Q].IsReady() &&
+                    _spells[SpellSlot.Q].IsInRange(rTarget))
+                {
+                    return;
+                }
                 if (_spells[SpellSlot.R].IsReady() && _spells[SpellSlot.R].IsInRange(rTarget))
                 {
-                    if (_menu.Item("overkillCheck").GetValue<bool>())
-                    {
-                        //TODO check for overkill and return if is overkill kappa...
-                    }
                     if (_spells[SpellSlot.R].GetDamage(rTarget) > rTarget.Health + 10)
                     {
                         _spells[SpellSlot.R].CastIfHitchanceEquals(rTarget, GetCustomHitChance());
@@ -168,23 +200,17 @@ namespace iFuckingAwesomeGraves
                                 prediction.AoeTargetsHitCount >= _menu.Item("rCount").GetValue<Slider>().Value
                             select source)
                         {
-                            _spells[SpellSlot.R].CastIfHitchanceEquals(source, GetCustomHitChance());
+                            _spells[SpellSlot.R].Cast(source);
                         }
                     }
                 }
             }
         }
 
-        public static void CollateralDamageKs()
+        private static void CollateralDamageKs()
         {
-            foreach (var target in _player.Position.GetEnemiesInRange(1900).Where(e => e.IsValidTarget()))
+            foreach (Obj_AI_Hero target in _player.Position.GetEnemiesInRange(1900).Where(e => e.IsValidTarget()))
             {
-                if (target.Distance(_player) < _spells[SpellSlot.R].Range &&
-                    _spells[SpellSlot.R].GetDamage(target) > target.Health)
-                {
-                    _spells[SpellSlot.R].Cast(target);
-                    return;
-                }
                 if (R2Damage(target) < target.Health)
                 {
                     return;
@@ -253,8 +279,9 @@ namespace iFuckingAwesomeGraves
                 var smokescreenMenu = new Menu("Smokescreen (W)", "com.ifag.combo.smokescreen");
                 {
                     smokescreenMenu.AddItem(new MenuItem("useWC", "Use W Combo").SetValue(true));
-                    //TODO min enemies to cast smokescreen
-                    //cast on immobilel aswell.
+                    smokescreenMenu.AddItem(new MenuItem("wImmobile", "Use W on immobile").SetValue(false));
+                    smokescreenMenu.AddItem(
+                        new MenuItem("wCount", "Min Enemies to auto W").SetValue(new Slider(3, 0, 5)));
                     comboMenu.AddSubMenu(smokescreenMenu);
                 }
                 var collateralMenu = new Menu("Collateral Damage (R)", "com.ifag.combo.collateral");

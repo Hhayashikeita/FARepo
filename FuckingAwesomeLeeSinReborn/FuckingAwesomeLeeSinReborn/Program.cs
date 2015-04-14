@@ -1,9 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+﻿// This file is part of LeagueSharp.Common.
+// 
+// LeagueSharp.Common is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// LeagueSharp.Common is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with LeagueSharp.Common.  If not, see <http://www.gnu.org/licenses/>.
+
+using System;
 using LeagueSharp;
 using LeagueSharp.Common;
 using SharpDX;
@@ -11,17 +21,17 @@ using Color = System.Drawing.Color;
 
 namespace FuckingAwesomeLeeSinReborn
 {
-    class Program
+    internal static class Program
     {
-        static void Main(string[] args)
+        private static Orbwalking.Orbwalker _orbwalker;
+        public static Menu Config;
+
+        private static void Main(string[] args)
         {
             CustomEvents.Game.OnGameLoad += Game_OnGameStart;
         }
 
-        public static Orbwalking.Orbwalker Orbwalker;
-        public static Menu Config;
-
-        static void Game_OnGameStart(EventArgs args)
+        private static void Game_OnGameStart(EventArgs args)
         {
             if (ObjectManager.Player.ChampionName != "LeeSin")
             {
@@ -30,7 +40,7 @@ namespace FuckingAwesomeLeeSinReborn
             }
             Config = new Menu("FA LeeSin: Reborn", "you-stealing-me-src-m9?", true);
 
-            Orbwalker = new Orbwalking.Orbwalker(Config.AddSubMenu(new Menu("Orbwalker", "Orbwalker")));
+            _orbwalker = new Orbwalking.Orbwalker(Config.AddSubMenu(new Menu("Orbwalker", "Orbwalker")));
             TargetSelector.AddToMenu(Config.AddSubMenu(new Menu("Target Selector", "Target Selector")));
 
             var combo = Config.AddSubMenu(new Menu("Combo", "Combo"));
@@ -39,10 +49,10 @@ namespace FuckingAwesomeLeeSinReborn
             combo.AddItem(new MenuItem("CE", "Use E").SetValue(true));
             combo.AddItem(new MenuItem("CR", "Use R (kill)").SetValue(false));
             combo.AddItem(new MenuItem("CpassiveCheck", "Passive Check").SetValue(false));
-            combo.AddItem(new MenuItem("CpassiveCheckCount", "Min Stacks").SetValue(new Slider(1,1,2)));
+            combo.AddItem(new MenuItem("CpassiveCheckCount", "Min Stacks").SetValue(new Slider(1, 1, 2)));
             combo.AddItem(new MenuItem("starCombo", "Star Combo").SetValue(new KeyBind('T', KeyBindType.Press)));
             combo.AddItem(new MenuItem("starsadasCombo", "Q -> Ward -> W -> R -> Q2"));
-            
+
             var harass = Config.AddSubMenu(new Menu("Harass", "Harass"));
             harass.AddItem(new MenuItem("HQ", "Use Q").SetValue(true));
             harass.AddItem(new MenuItem("HE", "Use E").SetValue(false));
@@ -64,7 +74,8 @@ namespace FuckingAwesomeLeeSinReborn
             insec.AddItem(new MenuItem("insec", "Insec Active").SetValue(new KeyBind('Y', KeyBindType.Press)));
 
             var autoSmite = Config.AddSubMenu(new Menu("Auto Smite", "Auto Smite"));
-            autoSmite.AddItem(new MenuItem("smiteEnabled", "Enabled").SetValue(new KeyBind("M".ToCharArray()[0], KeyBindType.Toggle)));
+            autoSmite.AddItem(
+                new MenuItem("smiteEnabled", "Enabled").SetValue(new KeyBind("M".ToCharArray()[0], KeyBindType.Toggle)));
             autoSmite.AddItem(new MenuItem("SRU_Red", "Red Buff").SetValue(true));
             autoSmite.AddItem(new MenuItem("SRU_Blue", "Blue Buff").SetValue(true));
             autoSmite.AddItem(new MenuItem("SRU_Dragon", "Dragon").SetValue(true));
@@ -81,7 +92,9 @@ namespace FuckingAwesomeLeeSinReborn
 
             var draw = Config.AddSubMenu(new Menu("Draw", "Draw"));
             draw.AddItem(new MenuItem("LowFPS", "Low Fps Mode").SetValue(false));
-            draw.AddItem(new MenuItem("LowFPSMode", "Low FPS Settings").SetValue(new StringList(new []{"EXTREME", "MEDIUM", "LOW"}, 2)));
+            draw.AddItem(
+                new MenuItem("LowFPSMode", "Low FPS Settings").SetValue(
+                    new StringList(new[] { "EXTREME", "MEDIUM", "LOW" }, 2)));
             draw.AddItem(new MenuItem("DQ", "Draw Q Range").SetValue(new Circle(false, Color.White)));
             draw.AddItem(new MenuItem("DW", "Draw W Range").SetValue(new Circle(false, Color.White)));
             draw.AddItem(new MenuItem("DE", "Draw E Range").SetValue(new Circle(false, Color.White)));
@@ -108,8 +121,8 @@ namespace FuckingAwesomeLeeSinReborn
 
 
             Config.AddToMainMenu();
-            
-            CheckHandler.spells[SpellSlot.Q].SetSkillshot(0.25f, 65f, 1800f, true, SkillshotType.SkillshotLine);
+
+            CheckHandler._spells[SpellSlot.Q].SetSkillshot(0.25f, 65f, 1800f, true, SkillshotType.SkillshotLine);
 
             CheckHandler.Init();
             JumpHandler.Load();
@@ -122,31 +135,39 @@ namespace FuckingAwesomeLeeSinReborn
             Notifications.AddNotification(new Notification("REBORN", 2));
         }
 
-        static void Drawing_OnDraw(EventArgs args)
+        private static void Drawing_OnDraw(EventArgs args)
         {
             var lowFps = Config.Item("LowFPS").GetValue<bool>();
             var lowFpsMode = Config.Item("LowFPSMode").GetValue<StringList>().SelectedIndex + 1;
             if (Config.Item("DQ").GetValue<Circle>().Active)
             {
-                Render.Circle.DrawCircle(ObjectManager.Player.Position, CheckHandler.spells[SpellSlot.Q].Range, Config.Item("DQ").GetValue<Circle>().Color, lowFps ? lowFpsMode : 5);
+                Render.Circle.DrawCircle(
+                    ObjectManager.Player.Position, CheckHandler._spells[SpellSlot.Q].Range,
+                    Config.Item("DQ").GetValue<Circle>().Color, lowFps ? lowFpsMode : 5);
             }
             if (Config.Item("DW").GetValue<Circle>().Active)
             {
-                Render.Circle.DrawCircle(ObjectManager.Player.Position, CheckHandler.spells[SpellSlot.W].Range, Config.Item("DW").GetValue<Circle>().Color , lowFps ? lowFpsMode : 5);
+                Render.Circle.DrawCircle(
+                    ObjectManager.Player.Position, CheckHandler._spells[SpellSlot.W].Range,
+                    Config.Item("DW").GetValue<Circle>().Color, lowFps ? lowFpsMode : 5);
             }
             if (Config.Item("DE").GetValue<Circle>().Active)
             {
-                Render.Circle.DrawCircle(ObjectManager.Player.Position, CheckHandler.spells[SpellSlot.E].Range, Config.Item("DE").GetValue<Circle>().Color , lowFps ? lowFpsMode : 5);
+                Render.Circle.DrawCircle(
+                    ObjectManager.Player.Position, CheckHandler._spells[SpellSlot.E].Range,
+                    Config.Item("DE").GetValue<Circle>().Color, lowFps ? lowFpsMode : 5);
             }
             if (Config.Item("DR").GetValue<Circle>().Active)
             {
-                Render.Circle.DrawCircle(ObjectManager.Player.Position, CheckHandler.spells[SpellSlot.R].Range, Config.Item("DR").GetValue<Circle>().Color , lowFps ? lowFpsMode : 5);
+                Render.Circle.DrawCircle(
+                    ObjectManager.Player.Position, CheckHandler._spells[SpellSlot.R].Range,
+                    Config.Item("DR").GetValue<Circle>().Color, lowFps ? lowFpsMode : 5);
             }
             WardjumpHandler.Draw();
             InsecHandler.Draw();
         }
 
-        static void Game_OnGameUpdate(EventArgs args)
+        private static void Game_OnGameUpdate(EventArgs args)
         {
             if (CheckHandler.LastSpell + 3000 <= Environment.TickCount)
             {
@@ -162,8 +183,8 @@ namespace FuckingAwesomeLeeSinReborn
                 InsecHandler.DoInsec();
                 return;
             }
-                InsecHandler.FlashPos = new Vector3();
-                InsecHandler.FlashR = false;
+            InsecHandler.FlashPos = new Vector3();
+            InsecHandler.FlashR = false;
 
             if (Config.Item("Wardjump").GetValue<KeyBind>().Active)
             {
@@ -173,19 +194,18 @@ namespace FuckingAwesomeLeeSinReborn
             }
             WardjumpHandler.DrawEnabled = false;
 
-            switch (Orbwalker.ActiveMode)
+            switch (_orbwalker.ActiveMode)
             {
                 case Orbwalking.OrbwalkingMode.Combo:
-                StateHandler.Combo();
-                return;
+                    StateHandler.Combo();
+                    return;
                 case Orbwalking.OrbwalkingMode.LaneClear:
-                StateHandler.JungleClear();
-                return;
+                    StateHandler.JungleClear();
+                    return;
                 case Orbwalking.OrbwalkingMode.Mixed:
-                StateHandler.Harass();
-                return;
+                    StateHandler.Harass();
+                    return;
             }
         }
     }
 }
- 
