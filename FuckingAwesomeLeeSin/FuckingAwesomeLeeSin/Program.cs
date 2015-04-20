@@ -491,9 +491,9 @@ namespace FuckingAwesomeLeeSin
                             WardJump(getInsecPos(target), false, false, true);
                             wardJumped = true;
                         }
-                        else if (Player.Spellbook.CanUseSpell(flashSlot) == SpellState.Ready && ParamBool("flashInsec") &&
+                        else if (FindBestWardItem() == null && Player.Spellbook.CanUseSpell(flashSlot) == SpellState.Ready && ParamBool("flashInsec") &&
                                  !wardJumped && Player.Distance(insecPos) < 400 ||
-                                 Player.Spellbook.CanUseSpell(flashSlot) == SpellState.Ready && ParamBool("flashInsec") &&
+                                 FindBestWardItem() == null && Player.Spellbook.CanUseSpell(flashSlot) == SpellState.Ready && ParamBool("flashInsec") &&
                                  !wardJumped && Player.Distance(insecPos) < 400 && FindBestWardItem() == null)
                         {
                             Player.Spellbook.CastSpell(flashSlot, getInsecPos(target));
@@ -570,10 +570,18 @@ namespace FuckingAwesomeLeeSin
                 MinionManager.GetMinions(
                     Player.Position, 1100f, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.None))
             {
-                if (epics.Any(minionName => minion.BaseSkinName == minionName && HpLowerParam(minion, "hpEpics") && ParamBool("dEpics"))) {
+                if (
+                    epics.Any(
+                        minionName =>
+                            minion.BaseSkinName == minionName && HpLowerParam(minion, "hpEpics") && ParamBool("dEpics")))
+                {
                     epicSafe = true;
                 }
-                if (buffs.Any(minionName => minion.BaseSkinName == minionName && HpLowerParam(minion, "hpBuffs") && ParamBool("dBuffs"))) {
+                if (
+                    buffs.Any(
+                        minionName =>
+                            minion.BaseSkinName == minionName && HpLowerParam(minion, "hpBuffs") && ParamBool("dBuffs")))
+                {
                     buffSafe = true;
                 }
             }
@@ -583,22 +591,30 @@ namespace FuckingAwesomeLeeSin
                 return;
             }
 
-            foreach (var minion in MinionManager.GetMinions(
-                Player.Position, 700f, MinionTypes.All, MinionTeam.NotAlly, MinionOrderTypes.MaxHealth).TakeWhile(minion => (W.IsReady() || Player.HasBuff("BlindMonkIronWill")) && smiteSlot != SpellSlot.Unknown && (smiteSlot == SpellSlot.Unknown || Player.Spellbook.CanUseSpell(smiteSlot) == SpellState.Ready))) {
-                    if (minion.Name.ToLower().Contains("ward"))
-                    {
-                        return;
-                    }
-                    if (W.Instance.Name != "blindmonkwtwo")
-                    {
-                        W.Cast();
-                        W.Cast();
-                    }
-                    if (Player.HasBuff("BlindMonkIronWill"))
-                    {
-                        Player.Spellbook.CastSpell(smiteSlot, minion);
-                    }
+            foreach (
+                var minion in
+                    MinionManager.GetMinions(
+                        Player.Position, 700f, MinionTypes.All, MinionTeam.NotAlly, MinionOrderTypes.MaxHealth)
+                        .TakeWhile(
+                            minion =>
+                                (W.IsReady() || Player.HasBuff("BlindMonkIronWill")) && smiteSlot != SpellSlot.Unknown &&
+                                (smiteSlot == SpellSlot.Unknown ||
+                                 Player.Spellbook.CanUseSpell(smiteSlot) == SpellState.Ready)))
+            {
+                if (minion.Name.ToLower().Contains("ward"))
+                {
+                    return;
                 }
+                if (W.Instance.Name != "blindmonkwtwo")
+                {
+                    W.Cast();
+                    W.Cast();
+                }
+                if (Player.HasBuff("BlindMonkIronWill"))
+                {
+                    Player.Spellbook.CastSpell(smiteSlot, minion);
+                }
+            }
         }
 
         #endregion
@@ -817,7 +833,8 @@ namespace FuckingAwesomeLeeSin
                     {
                         return;
                     }
-                    if (Q2Damage(minion, ((float) GetSmiteDamage() + Q.GetDamage(minion)), true) + GetSmiteDamage() > minion.Health &&
+                    if (Q2Damage(minion, ((float) GetSmiteDamage() + Q.GetDamage(minion)), true) + GetSmiteDamage() >
+                        minion.Health &&
                         !(minion.HasBuff("BlindMonkQOne", true) || minion.HasBuff("blindmonkqonechaos", true)))
                     {
                         Q.Cast(minion, true);
@@ -1324,6 +1341,7 @@ namespace FuckingAwesomeLeeSin
                 Items.UseItem(3143);
             }
         }
+
         public static double GetSmiteDamage()
         {
             int[] dmg =
