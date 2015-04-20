@@ -491,9 +491,9 @@ namespace FuckingAwesomeLeeSin
                             WardJump(getInsecPos(target), false, false, true);
                             wardJumped = true;
                         }
-                        else if (FindBestWardItem() == null && Player.Spellbook.CanUseSpell(flashSlot) == SpellState.Ready && ParamBool("flashInsec") &&
+                        else if (Player.Spellbook.CanUseSpell(flashSlot) == SpellState.Ready && ParamBool("flashInsec") &&
                                  !wardJumped && Player.Distance(insecPos) < 400 ||
-                                 FindBestWardItem() == null && Player.Spellbook.CanUseSpell(flashSlot) == SpellState.Ready && ParamBool("flashInsec") &&
+                                 Player.Spellbook.CanUseSpell(flashSlot) == SpellState.Ready && ParamBool("flashInsec") &&
                                  !wardJumped && Player.Distance(insecPos) < 400 && FindBestWardItem() == null)
                         {
                             Player.Spellbook.CastSpell(flashSlot, getInsecPos(target));
@@ -537,15 +537,10 @@ namespace FuckingAwesomeLeeSin
 
         private static List<Obj_AI_Hero> GetAllyHeroes(Obj_AI_Hero position, int range)
         {
-            List<Obj_AI_Hero> temp = new List<Obj_AI_Hero>();
-            foreach (Obj_AI_Hero hero in ObjectManager.Get<Obj_AI_Hero>())
-            {
-                if (hero.IsAlly && !hero.IsMe && hero.Distance(position) < range)
-                {
-                    temp.Add(hero);
-                }
-            }
-            return temp;
+            return
+                ObjectManager.Get<Obj_AI_Hero>()
+                    .Where(hero => hero.IsAlly && !hero.IsMe && hero.Distance(position) < range)
+                    .ToList();
         }
 
         private static Vector2 V2E(Vector3 from, Vector3 direction, float distance)
@@ -591,15 +586,14 @@ namespace FuckingAwesomeLeeSin
                 return;
             }
 
-            foreach (
-                var minion in
-                    MinionManager.GetMinions(
-                        Player.Position, 700f, MinionTypes.All, MinionTeam.NotAlly, MinionOrderTypes.MaxHealth)
-                        .TakeWhile(
-                            minion =>
-                                (W.IsReady() || Player.HasBuff("BlindMonkIronWill")) && smiteSlot != SpellSlot.Unknown &&
-                                (smiteSlot == SpellSlot.Unknown ||
-                                 Player.Spellbook.CanUseSpell(smiteSlot) == SpellState.Ready)))
+            foreach (var minion in
+                MinionManager.GetMinions(
+                    Player.Position, 700f, MinionTypes.All, MinionTeam.NotAlly, MinionOrderTypes.MaxHealth)
+                    .TakeWhile(
+                        minion =>
+                            (W.IsReady() || Player.HasBuff("BlindMonkIronWill")) && smiteSlot != SpellSlot.Unknown &&
+                            (smiteSlot == SpellSlot.Unknown ||
+                             Player.Spellbook.CanUseSpell(smiteSlot) == SpellState.Ready)))
             {
                 if (minion.Name.ToLower().Contains("ward"))
                 {
@@ -1167,7 +1161,7 @@ namespace FuckingAwesomeLeeSin
 
         private static void StarCombo()
         {
-            Obj_AI_Hero target = TargetSelector.GetTarget(1300, TargetSelector.DamageType.Physical);
+            Obj_AI_Hero target = TargetSelector.GetTarget(1500f, TargetSelector.DamageType.Physical);
             if (target == null)
             {
                 return;
@@ -1196,7 +1190,7 @@ namespace FuckingAwesomeLeeSin
             }
             if (ParamBool("useW"))
             {
-                if (ParamBool("wMode") && target.Distance(Player) > Q.Range)
+                if (ParamBool("wMode") && Player.Distance(target) > Q.Range)
                 {
                     WardJump(target.Position, false, true);
                 }
