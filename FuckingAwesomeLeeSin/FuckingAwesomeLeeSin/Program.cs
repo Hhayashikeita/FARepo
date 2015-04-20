@@ -179,7 +179,7 @@ namespace FuckingAwesomeLeeSin
             Menu.SubMenu("Combo").AddItem(new MenuItem("useQ2", "Use Q2").SetValue(true));
             Menu.SubMenu("Combo").AddItem(new MenuItem("useW", "Wardjump in combo").SetValue(false));
             Menu.SubMenu("Combo").AddItem(new MenuItem("dsjk", "Wardjump if: "));
-            Menu.SubMenu("Combo").AddItem(new MenuItem("wMode", "> AA Range || > Q Range").SetValue(true));
+            Menu.SubMenu("Combo").AddItem(new MenuItem("wMode", "> Q Range").SetValue(true));
             Menu.SubMenu("Combo").AddItem(new MenuItem("useE", "Use E").SetValue(true));
             Menu.SubMenu("Combo").AddItem(new MenuItem("useR", "Use R").SetValue(false));
             Menu.SubMenu("Combo").AddItem(new MenuItem("ksR", "KS R").SetValue(false));
@@ -566,25 +566,15 @@ namespace FuckingAwesomeLeeSin
             }
             var epicSafe = false;
             var buffSafe = false;
-            foreach (var minion in
+            foreach (Obj_AI_Base minion in
                 MinionManager.GetMinions(
                     Player.Position, 1100f, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.None))
             {
-                foreach (var minionName in epics)
-                {
-                    if (minion.BaseSkinName == minionName && HpLowerParam(minion, "hpEpics") && ParamBool("dEpics"))
-                    {
-                        epicSafe = true;
-                        break;
-                    }
+                if (epics.Any(minionName => minion.BaseSkinName == minionName && HpLowerParam(minion, "hpEpics") && ParamBool("dEpics"))) {
+                    epicSafe = true;
                 }
-                foreach (var minionName in buffs)
-                {
-                    if (minion.BaseSkinName == minionName && HpLowerParam(minion, "hpBuffs") && ParamBool("dBuffs"))
-                    {
-                        buffSafe = true;
-                        break;
-                    }
+                if (buffs.Any(minionName => minion.BaseSkinName == minionName && HpLowerParam(minion, "hpBuffs") && ParamBool("dBuffs"))) {
+                    buffSafe = true;
                 }
             }
 
@@ -593,29 +583,22 @@ namespace FuckingAwesomeLeeSin
                 return;
             }
 
-            foreach (var minion in
-                MinionManager.GetMinions(
-                    Player.Position, 700f, MinionTypes.All, MinionTeam.NotAlly, MinionOrderTypes.MaxHealth))
-            {
-                if (!W.IsReady() && !Player.HasBuff("BlindMonkIronWill") || smiteSlot == SpellSlot.Unknown ||
-                    smiteSlot != SpellSlot.Unknown && Player.Spellbook.CanUseSpell(smiteSlot) != SpellState.Ready)
-                {
-                    break;
+            foreach (var minion in MinionManager.GetMinions(
+                Player.Position, 700f, MinionTypes.All, MinionTeam.NotAlly, MinionOrderTypes.MaxHealth).TakeWhile(minion => (W.IsReady() || Player.HasBuff("BlindMonkIronWill")) && smiteSlot != SpellSlot.Unknown && (smiteSlot == SpellSlot.Unknown || Player.Spellbook.CanUseSpell(smiteSlot) == SpellState.Ready))) {
+                    if (minion.Name.ToLower().Contains("ward"))
+                    {
+                        return;
+                    }
+                    if (W.Instance.Name != "blindmonkwtwo")
+                    {
+                        W.Cast();
+                        W.Cast();
+                    }
+                    if (Player.HasBuff("BlindMonkIronWill"))
+                    {
+                        Player.Spellbook.CastSpell(smiteSlot, minion);
+                    }
                 }
-                if (minion.Name.ToLower().Contains("ward"))
-                {
-                    return;
-                }
-                if (W.Instance.Name != "blindmonkwtwo")
-                {
-                    W.Cast();
-                    W.Cast();
-                }
-                if (Player.HasBuff("BlindMonkIronWill"))
-                {
-                    Player.Spellbook.CastSpell(smiteSlot, minion);
-                }
-            }
         }
 
         #endregion
@@ -624,7 +607,7 @@ namespace FuckingAwesomeLeeSin
 
         private static void Game_OnGameUpdate(EventArgs args)
         {
-            smiteSlot = Player.GetSpellSlot(Smitetype());
+            smiteSlot = Player.GetSpellSlot(GetSmiteName());
 
             if (doubleClickReset <= Environment.TickCount && clickCount != 0)
             {
@@ -821,7 +804,7 @@ namespace FuckingAwesomeLeeSin
                 if (Menu.Item(minion.BaseSkinName).GetValue<bool>())
                 {
                     minionerimo = minion;
-                    if (SmiteDmg() > minion.Health && minion.IsValidTarget(780) && ParamBool("normSmite"))
+                    if (GetSmiteDamage() > minion.Health && minion.IsValidTarget(780) && ParamBool("normSmite"))
                     {
                         Player.Spellbook.CastSpell(smiteSlot, minion);
                     }
@@ -834,12 +817,12 @@ namespace FuckingAwesomeLeeSin
                     {
                         return;
                     }
-                    if (Q2Damage(minion, ((float) SmiteDmg() + Q.GetDamage(minion)), true) + SmiteDmg() > minion.Health &&
+                    if (Q2Damage(minion, ((float) GetSmiteDamage() + Q.GetDamage(minion)), true) + GetSmiteDamage() > minion.Health &&
                         !(minion.HasBuff("BlindMonkQOne", true) || minion.HasBuff("blindmonkqonechaos", true)))
                     {
                         Q.Cast(minion, true);
                     }
-                    if ((Q2Damage(minion, (float) SmiteDmg(), true) + SmiteDmg()) > minion.Health &&
+                    if ((Q2Damage(minion, (float) GetSmiteDamage(), true) + GetSmiteDamage()) > minion.Health &&
                         (minion.HasBuff("BlindMonkQOne", true) || minion.HasBuff("blindmonkqonechaos", true)))
                     {
                         Q.CastOnUnit(Player, true);
@@ -1196,11 +1179,7 @@ namespace FuckingAwesomeLeeSin
             }
             if (ParamBool("useW"))
             {
-                if (ParamBool("wMode") && target.Distance(Player) > Orbwalking.GetRealAutoAttackRange(Player))
-                {
-                    WardJump(target.Position, false, true);
-                }
-                if (!ParamBool("wMode") && target.Distance(Player) > Q.Range)
+                if (ParamBool("wMode") && target.Distance(Player) > Q.Range)
                 {
                     WardJump(target.Position, false, true);
                 }
@@ -1255,7 +1234,7 @@ namespace FuckingAwesomeLeeSin
         public static readonly int[] SmiteRed = { 3715, 3718, 3717, 3716, 3714 };
         public static readonly int[] SmiteBlue = { 3706, 3710, 3709, 3708, 3707 };
 
-        private static string Smitetype()
+        private static string GetSmiteName()
         {
             if (SmiteBlue.Any(a => Items.HasItem(a)))
             {
@@ -1345,9 +1324,7 @@ namespace FuckingAwesomeLeeSin
                 Items.UseItem(3143);
             }
         }
-
-
-        public static double SmiteDmg()
+        public static double GetSmiteDamage()
         {
             int[] dmg =
             {

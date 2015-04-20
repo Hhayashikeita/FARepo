@@ -108,6 +108,8 @@ namespace FuckingAwesomeLeeSinReborn
                     CheckHandler._spells[SpellSlot.E].Cast();
                 }
             }
+
+            //SuperDuperUlt();
         }
 
         public static void StarCombo()
@@ -328,9 +330,9 @@ namespace FuckingAwesomeLeeSinReborn
             }
         }
 
-        private static void CastQ(Obj_AI_Base target, bool smiteQ = false)
+        public static void CastQ(Obj_AI_Base target, bool smiteQ = false)
         {
-            var qData = CheckHandler._spells[SpellSlot.Q].GetPrediction(target);
+            PredictionOutput qData = CheckHandler._spells[SpellSlot.Q].GetPrediction(target);
             if (CheckHandler._spells[SpellSlot.Q].IsReady() &&
                 target.IsValidTarget(CheckHandler._spells[SpellSlot.Q].Range))
             {
@@ -341,29 +343,27 @@ namespace FuckingAwesomeLeeSinReborn
             }
 
             if (smiteQ && CheckHandler._spells[SpellSlot.Q].IsReady() &&
-                target.IsValidTarget(CheckHandler._spells[SpellSlot.Q].Range) && qData.Hitchance == HitChance.Collision && Player.Distance(target) > Orbwalking.GetRealAutoAttackRange(target))
+                target.IsValidTarget(CheckHandler._spells[SpellSlot.Q].Range) && qData.Hitchance == HitChance.Collision)
             {
-                Obj_AI_Base firstMinion = GetFirstCollisionMinion(Player, target);
-                if (firstMinion.Distance(Player) <= 600 && firstMinion != null &&
-                    Player.GetSummonerSpellDamage(firstMinion, Damage.SummonerSpell.Smite) >= firstMinion.Health)
+                foreach (Obj_AI_Base minion in
+                    from minion in
+                        MinionManager.GetMinions(
+                            Player.Position, CheckHandler._spells[SpellSlot.Q].Range, MinionTypes.All,
+                            MinionTeam.NotAlly)
+                    let projection =
+                        minion.Position.To2D().ProjectOn(Player.ServerPosition.To2D(), target.ServerPosition.To2D())
+                    where
+                        projection.IsOnSegment &&
+                        projection.SegmentPoint.Distance(minion) <=
+                        minion.BoundingRadius + CheckHandler._spells[SpellSlot.Q].Width &&
+                        Player.GetSpellSlot(CheckHandler.SmiteSpellName()).IsReady() &&
+                        Player.GetSummonerSpellDamage(minion, Damage.SummonerSpell.Smite) > minion.Health
+                    select minion)
                 {
-                    Player.Spellbook.CastSpell(Player.GetSpellSlot(CheckHandler.SmiteSpellName()), firstMinion);
-                    CheckHandler._spells[SpellSlot.Q].Cast(qData.CastPosition);
+                    Player.Spellbook.CastSpell(Player.GetSpellSlot(CheckHandler.SmiteSpellName()), minion);
+                    CheckHandler._spells[SpellSlot.Q].Cast(target);
                 }
-
             }
-
-            /*else if (smiteQ && CheckHandler._spells[SpellSlot.Q].IsReady() &&
-                     target.IsValidTarget(CheckHandler._spells[SpellSlot.Q].Range) &&
-                     qData.CollisionObjects.Count(a => a.NetworkId != target.NetworkId && a.IsMinion) == 1 &&
-                     Player.GetSpellSlot(CheckHandler.SmiteSpellName()).IsReady())
-            {
-                Obj_AI_Base minionSmite =
-                    qData.CollisionObjects.Where(a => a.NetworkId != target.NetworkId && a.IsMinion).ToList()[0];
-                Player.Spellbook.CastSpell(
-                    Player.GetSpellSlot(CheckHandler.SmiteSpellName()), minionSmite);
-                CheckHandler._spells[SpellSlot.Q].Cast(qData.CastPosition);
-            }*/
         }
 
         /// <summary>
@@ -387,8 +387,76 @@ namespace FuckingAwesomeLeeSinReborn
 
             input.CollisionObjects[0] = CollisionableObjects.Minions;
 
-            return
-                Collision.GetCollision(new List<Vector3> { target.Position }, input).FirstOrDefault();
+            return Collision.GetCollision(new List<Vector3> { target.Position }, input).FirstOrDefault();
+        }
+
+        public static void SuperDuperUlt()
+        {
+            Obj_AI_Hero initialTarget = HeroManager.Enemies.FirstOrDefault(x => Player.Distance(x) <= CheckHandler._spells[SpellSlot.R].Range);
+            Vector2 startPosition = Player.ServerPosition.To2D();
+            if (initialTarget != null) {
+                var projectionInfo = Player.ServerPosition.To2D()
+                    .ProjectOn(
+                        startPosition, Player.ServerPosition.To2D().Extend(initialTarget.ServerPosition.To2D(), 1200));
+
+                int count = 1; // always 1 for the inital target
+
+                // ReSharper disable once LoopCanBeConvertedToQuery disabled for now..
+                foreach (Obj_AI_Hero hero in
+                    HeroManager.Enemies.Where(x => x.NetworkId != initialTarget.NetworkId && x.IsValidTarget(1200)))
+                {
+                    if (projectionInfo.IsOnSegment &&
+                        projectionInfo.LinePoint.Distance(hero, true) <=
+                        CheckHandler._spells[SpellSlot.R].Range * CheckHandler._spells[SpellSlot.R].Range)
+                    {
+                        count = count + 1;
+                    }
+                }
+
+                if (count >= 2)
+                {
+                    if (CheckHandler._spells[SpellSlot.R].IsReady())
+                    {
+                        CheckHandler._spells[SpellSlot.R].Cast(initialTarget);
+                    }
+                }
+            }
+        }
+
+        public static void DrawProjection()
+        {
+            Obj_AI_Hero target = TargetSelector.GetTarget(1200f, TargetSelector.DamageType.Physical);
+            Vector2 startPosition =
+                Player.ServerPosition.Extend(target.ServerPosition, CheckHandler._spells[SpellSlot.R].Range).To2D();
+            Vector3 endPosition = Player.ServerPosition.Extend(target.ServerPosition, 1200);
+            // 1200 is knockback distance
+
+            foreach (Obj_AI_Hero hero in HeroManager.Enemies.Where(x => x.NetworkId != target.NetworkId))
+            {
+                var projection = Player.ServerPosition.To2D()
+                 .ProjectOn(
+                     startPosition, Player.ServerPosition.To2D().Extend(target.ServerPosition.To2D(), 1200));
+                Vector2 wtsPlayer = Drawing.WorldToScreen(Player.Position);
+                Vector2 wtsPred = Drawing.WorldToScreen(endPosition);
+                Render.Circle.DrawCircle(
+                    startPosition.To3D(), CheckHandler._spells[SpellSlot.R].Width, System.Drawing.Color.Aquamarine);
+                Render.Circle.DrawCircle(
+                    startPosition.To3D(), CheckHandler._spells[SpellSlot.R].Width, System.Drawing.Color.SpringGreen);
+                Drawing.DrawLine(wtsPlayer, wtsPred, 1, System.Drawing.Color.Red);
+                Render.Circle.DrawCircle(projection.LinePoint.To3D(), 100, System.Drawing.Color.LawnGreen);
+            }
+            /*LeagueSharp.Common.Geometry.ProjectionInfo projection =
+                Player.ServerPosition.To2D().ProjectOn(startPosition.To2D(), endPosition.To2D());
+
+            Vector2 wtsPlayer = Drawing.WorldToScreen(Player.Position);
+            Vector2 wtsPred = Drawing.WorldToScreen(endPosition);
+            Render.Circle.DrawCircle(
+                startPosition, CheckHandler._spells[SpellSlot.R].Width, System.Drawing.Color.Aquamarine);
+            Render.Circle.DrawCircle(
+                startPosition, CheckHandler._spells[SpellSlot.R].Width, System.Drawing.Color.SpringGreen);
+            Drawing.DrawLine(wtsPlayer, wtsPred, 1, System.Drawing.Color.Red);
+            Render.Circle.DrawCircle(projection.LinePoint.To3D(), 100, System.Drawing.Color.LawnGreen);
+            Render.Circle.DrawCircle(projection.SegmentPoint.To3D(), 100, System.Drawing.Color.Indigo);*/
         }
 
         private static HitChance GetHitChance()

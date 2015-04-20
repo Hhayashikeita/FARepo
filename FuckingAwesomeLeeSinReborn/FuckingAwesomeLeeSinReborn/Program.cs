@@ -138,6 +138,7 @@ namespace FuckingAwesomeLeeSinReborn
 
         private static void Drawing_OnDraw(EventArgs args)
         {
+            StateHandler.DrawProjection();
             var lowFps = Config.Item("LowFPS").GetValue<bool>();
             var lowFpsMode = Config.Item("LowFPSMode").GetValue<StringList>().SelectedIndex + 1;
             if (Config.Item("DQ").GetValue<Circle>().Active)
@@ -164,13 +165,15 @@ namespace FuckingAwesomeLeeSinReborn
                     ObjectManager.Player.Position, CheckHandler._spells[SpellSlot.R].Range,
                     Config.Item("DR").GetValue<Circle>().Color, lowFps ? lowFpsMode : 5);
             }
-            Render.Circle.DrawCircle(StateHandler.GetFirstCollisionMinion(ObjectManager.Player, TargetSelector.GetTarget(1200f, TargetSelector.DamageType.Physical)).Position, 100f, Color.OrangeRed);
+            //Render.Circle.DrawCircle(StateHandler.GetFirstCollisionMinion(ObjectManager.Player, TargetSelector.GetTarget(1200f, TargetSelector.DamageType.Physical)).Position, 100f, Color.OrangeRed);
             WardjumpHandler.Draw();
             InsecHandler.Draw();
         }
 
         private static void Game_OnGameUpdate(EventArgs args)
         {
+            //StateHandler.SuperDuperUlt();
+
             if (CheckHandler.LastSpell + 3000 <= Environment.TickCount)
             {
                 CheckHandler.PassiveStacks = 0;

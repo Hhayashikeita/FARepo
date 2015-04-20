@@ -204,7 +204,7 @@ namespace FuckingAwesomeLeeSinReborn
             if (Player.Distance(_selectedEnemy) < CheckHandler._spells[SpellSlot.Q].Range && CheckHandler.QState &&
                 CheckHandler._spells[SpellSlot.Q].IsReady())
             {
-                CheckHandler._spells[SpellSlot.Q].Cast(_selectedEnemy);
+                StateHandler.CastQ(_selectedEnemy, true);
             }
             if (!CheckHandler.QState && _selectedEnemy.HasQBuff() ||
                 (Program.Config.Item("q2InsecRange").GetValue<bool>() && CheckHandler.BuffedEnemy.IsValidTarget() &&
